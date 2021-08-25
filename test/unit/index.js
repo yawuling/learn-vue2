@@ -5,5 +5,5 @@ const helpersContext = require.context('../helpers', true)
 helpersContext.keys().forEach(helpersContext)
 
 // require all test files
-const testsContext = require.context('./', true, /\.spec$/)
+const testsContext = require.context('./', true, /debug\.spec$/)
 testsContext.keys().forEach(testsContext)

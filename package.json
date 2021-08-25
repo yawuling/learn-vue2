@@ -15,6 +15,7 @@
   "sideEffects": false,
   "scripts": {
     "dev": "rollup -w -c scripts/config.js --environment TARGET:web-full-dev",
+    "dev:demo": "webpack-dev-server --disable-host-check --inline --progress --config demo/webpack.config.js",
     "dev:cjs": "rollup -w -c scripts/config.js --environment TARGET:web-runtime-cjs-dev",
     "dev:esm": "rollup -w -c scripts/config.js --environment TARGET:web-runtime-esm",
     "dev:test": "karma start test/unit/karma.dev.config.js",
@@ -101,6 +102,7 @@
     "flow-bin": "^0.61.0",
     "hash-sum": "^1.0.2",
     "he": "^1.1.1",
+    "html-webpack-plugin": "4",
     "http-server": "^0.12.3",
     "jasmine": "^2.99.0",
     "jasmine-core": "^2.99.0",
@@ -138,6 +140,9 @@
     "terser": "^3.10.2",
     "typescript": "^3.6.4",
     "webpack": "~4.28.4",
+    "webpack-cli": "3",
+    "webpack-dev-middleware": "3",
+    "webpack-dev-server": "3",
     "weex-js-runtime": "^0.23.6",
     "weex-styler": "^0.3.0",
     "yorkie": "^2.0.0"
