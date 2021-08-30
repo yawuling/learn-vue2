@@ -1,0 +1,461 @@
+# Vue 创建过程
+
+## Vue 类创建过程
+
+一、`src/core/instance/index.js`，创建一个 Vue class，并给其挂上 init 初始化、state 数据绑定功能、event 事件（on、off、emit等）、lifecycle 生命周期、render 渲染函数。
+
+> 这一步都只是挂载函数，未进行 Vue 的实例化
+
+1. `src/core/instance/init.js`，`initMixin(Vue)` 方法给 Vue.prototype 添加 `_init` 函数，在 Vue 的 constructor 中执行初始化
+2. `src/core/instance/state.js`，`stateMixin(Vue)` 方法给 Vue.prototype 添加 `$data`、`$props`、`$set`、`$delete`、`$watch` 方法
+3. `src/core/instance/event.js`，`eventMixin(Vue)` 方法给 Vue.prototype 添加 `$on`、`$once`、`$off`、`$emit` 方法
+4. `src/core/instance/lifecycle.js`，`lifecycleMixin(Vue)` 方法给 `Vue.prototype` 添加 `_update`、`$forceUpdate`、`$destroy` 方法
+5. `src/core/instance/render.js`，`renderMixin(Vue)` 方法给 Vue.prototype 添加渲染辅助 helper 函数：
+
+```javascript
+Vue.prototype._o = markOnce
+Vue.prototype._n = toNumber
+Vue.prototype._s = toString
+Vue.prototype._l = renderList
+Vue.prototype._t = renderSlot
+Vue.prototype._q = looseEqual
+Vue.prototype._i = looseIndexOf
+Vue.prototype._m = renderStatic
+Vue.prototype._f = resolveFilter
+Vue.prototype._k = checkKeyCodes
+Vue.prototype._b = bindObjectProps
+Vue.prototype._v = createTextVNode
+Vue.prototype._e = createEmptyVNode
+Vue.prototype._u = resolveScopedSlots
+Vue.prototype._g = bindObjectListeners
+Vue.prototype._d = bindDynamicKeys
+Vue.prototype._p = prependModifier
+```
+
+并给 Vue.prototype 添加 `$nextTick`、`_render` 方法
+
+二、`src/core/index.js`，主要是添加 Vue 的静态方法、属性，以及在 Vue.prototype 添加 `$isServer`、`$ssrContext` 属性，`FunctionalRenderContext` 函数
+
+1. initGlobalAPI(Vue)，给 Vue 添加类静态方法、属性，添加了：
+  1）`Vue.config`
+  2）`Vue.util.warn`，用于开发环境警告日志
+  3）`Vue.util.extend`，用于合并两个对象，相同属性下后者覆盖前者
+  4）`Vue.util.mergeOptions`，用于合并2个 Vue 的 options 对象
+  5）`Vue.util.defineReactive`
+  6）`Vue.set`
+  7）`Vue.delete`
+  8）`Vue.netxTick`
+  9）`Vue.observable`，调用的 core/observer/index.js 下的 observe 函数
+  10）`Vue.options` = {}
+  11）`Vue.options.components = { KeepAlive }`，里面挂载了 `keep-alive` 组件
+  12）`Vue.options.directives = {}`
+  13）`Vue.options.filters = {}`
+  14）`Vue.options._base = Vue`
+  15）`initUse(Vue)` ，给 Vue 添加了 `Vue.use` 方法
+  16）`initMixin(Vue)` ，给 Vue 添加了 `Vue.mixin` 方法，该方法本质上是调用了 `mergeOptions` 方法，将 2 个 Vue 的 options 对象进行合并
+  17）`initExtend(Vue)` ，给 Vue 添加了 `Vue.extend` 方法，用于组件继承
+  18）`initAssetRegisters(Vue)` ，给 Vue 添加了 `Vue.components(id, definition)` 、`Vue.directives(id, definition)`、`Vue.filters(id, definition)` 函数，这三个函数执行注册时，都是将当前传入的 `definition` 挂载到 `this.options[id]` 上，并未做其他操作
+2. 给 Vue.prototype 添加了 `$isServer`、`$ssrContext` 属性，用于判断是否在服务端执行以及 ssr 上下文
+3. 给 Vue.prototype 添加了 `FunctionalRenderContext` 函数
+
+三、`src/platforms/web/runtime/index.js`
+
+1. `Vue.config.mustUseProp = mustUseProp`，该函数为判断标签是否需要使用 prop 传参：input,textarea,option,select,progress,option,video
+2. `Vue.config.isReservedTag = isReservedTag`，该函数为判断标签是否为保留的标签（dom官方标签）
+3. `Vue.config.isReservedAttr = isReservedAttr`，该函数为判断标签属性是否为保留的标签属性（dom官方标签属性）：style,class，用于判断自定义组件中是否自动将 style、class 属性绑定到组件根结点上
+4. `Vue.config.getTagNamespace = getTagNamespace`，该函数用于获取标签的所属类型，svg/math
+5. `Vue.config.isUnknownElement = isUnknownElement`，该函数用于判断标签是否为 unknown 标签（即非浏览器可识别的标签，如果是服务端渲染，则统一都列为不可识别，因为服务端没有 dom 结构）
+6. `extend(Vue.options.directives, platformDirectives)`，添加 `v-model` 和 `v-show` 指令，此时 `Vue.options.directives` 的值更新为 `{ modal, show }`
+7. `extend(Vue.options.components, platformComponents)`，添加 `Transition` 和 `TransitionGroup` 组件，此时 `Vue.options.components` 的值更新为 `{ KeepAlive, Transition, TransitionGroup }`
+8. `Vue.prototype.__patch__` 如果是在浏览器中，则添加 `patch`，否则则是个 `noop` 空函数
+9. `Vue.prototype.$mount` 添加 `$mount` 挂载方法
+10. 之后判断如果是 development 版本，且浏览器存在 devtool，则执行 `devtool.emit('init', Vue)`，否则则做 info 提示；如果页面使用了 development 版本且 Vue.config.productionTip 设置为 true 则提示应该使用 production 版本
+
+四、`src/platforms/web/entry-runtime-with-compiller.js`
+
+1. 扩展 `Vue.prototype.$mount`，
+2. 添加静态方法 `Vue.compile = compileToFunctions`
+
+## new Vue(options) 执行过程
+
+一、执行 `_init(options)` 方法
+
+1. 每个 vue 实例上都会有 `_uid` 字段，用来标记当前这个实例的唯一 id
+2. 添加 `this._isVue = true` 避免将 `this` 实例对象进行 observe 响应式绑定
+3. `options._isComponent` 判断是不是组件，如果是组件，则执行 `initInternalComponent(this, options)`，后续：待补充；否则，执行
+
+```javascript
+vm.$options = mergeOptions(
+  resolveConstructorOptions(vm.constructor),
+  options || {},
+  vm
+)
+```
+
+将 Vue.options 与当前的 options 进行合并，如果 options 中存在 extends 或者 mixins，则也将 extends 或 mixins 与 options 进行合并，且相同属性的参数，以下是参数合并的规则：
+
+> mergeOptions(parent, options)，这里 parent 指向 Vue.options，mergeOptions 内部还会再调用自身 parent = mergeOptions(parent, options.extend) 或者遍历 options.mixins （为数组）进行 mergeOptions(parent, mixins[i])；mergeOptions 来自 src/core/utils/options.js 文件，在该文件中初始化好对不同属性的合并逻辑
+
+1）el/propsData: 优先使用后者的属性
+2）data: 2 个对象或函数合并，如果是函数，则先执行函数得到返回结果后，再进行合并；相同属性下优先使用后者的属性
+3）lifycycle 生命周期合并: 将 key: value 的 value 值转化为数组，将两者推入数组中，且对数组进行去重，避免同个 options 的同个生命周期被多次调用
+4）component/directive/filter/props/methods/inject/computed: 2 个对象合并，相同属性下优先使用后者的属性
+5）watch: 2 个对象合并，将 key: value 的 value 值转化为数组，将两者推入数组中
+
+4. `vm._renderProxy = vm`
+5. `vm._self = vm`
+6. 执行 `initLifecycle(vm)`，挂载上:
+
+```javascript
+vm.$parent = parent
+vm.$root = parent ? parent.$root : vm
+
+vm.$children = []
+vm.$refs = {}
+
+vm._watcher = null
+vm._inactive = null
+vm._directInactive = false
+vm._isMounted = false
+vm._isDestroyed = false
+vm._isBeingDestroyed = false
+```
+
+7. 执行 `initEvent(vm)`，该函数主要是针对组件进行处理的，待补充
+
+```javascript
+vm._events = Object.create(null)
+vm._hasHookEvent = false
+// init parent attached events
+const listeners = vm.$options._parentListeners
+if (listeners) {
+  updateComponentListeners(vm, listeners)
+}
+```
+
+8. 执行 `initRender(vm)`
+
+设置 vnode `vm.$vnode = options._parentVnode`；
+
+获取 slot 插槽，`vm.$slots = resolveSlots(options._renderChildren, renderContext)`；
+
+`vm.$scopedSlots = emptyObject` 设置为空对象；
+
+`vm._c = (a, b, c, d) => createElement(vm, a, b, c, d, false)`，待补充；
+
+`vm.$createElement = (a, b, c, d) => createElement(vm, a, b, c, d, true)` ，待补充；
+
+对 `vm.$attrs` 和 `vm.$listeners` 对象设置相应式监听，其值为父节点的值和监听事件：
+
+```javascript
+defineReactive(vm, '$attrs', parentData && parentData.attrs || emptyObject, null, true)
+defineReactive(vm, '$listeners', options._parentListeners || emptyObject, null, true)
+```
+
+9. 执行 `callHook(vm, 'beforeCreate')` ，触发 `beforeCreate` 生命周期，因为这时还未对 data、props、computed 进行处理，因此 `this` 还未能获取到变量的值。支持通过 `vm.$on` 监听 `hook:` 的方式来监听生命周期。
+
+10. 执行 `initInjections(vm)` ，对 options.inject 进行深度监听（即如果属性的值为对象类型，则也进行 observe）
+
+11. 执行 `initState(vm)`
+
+设置 `vm._watchers = []`;
+
+1) 如果 `options.props` 存在，执行 `initProps(vm, opts.props)`，添加 `vm._props = {}`， `vm.$options._propKeys = []`，props 中的 key 都会存入 `vm.$options._propKeys` 数组中，如果当前 vm 实例非根组件，则不对 props 的属性进行深度监听，如果为根组件，则进行深度监听。同时如果 vm[key] 不存在，则设置 vm[key] 的 get 和 set 为直接获取和设置 vm._props[key]，因此我们可以直接通过 `this[key]` 来获取 props 上的变量
+
+2）如果 `options.methods` 存在，执行 `initMethods(vm, opts.methods)`，遍历 methods，执行 `vm[key] = typeof methods[key] !== 'function' ? noop : bind(methods[key], vm)`，因此可以 method 方法中 `this` 指向 `vm`
+
+3）如果 `options.data` 存在，执行 `initData(vm, opts.data)`，否则执行 `observe(vm._data = {}, true /* asRootData */)`。两种方式最后都会添加 `vm._data` 且对其进行 `observe` 进行数据响应式绑定，且对于 data 的属性进行深度监听。同时如果 vm[key] 不存在，则设置 vm[key] 的 get 和 set 为直接获取和设置 vm._data[key]，因此我们可以直接通过 `this[key]` 来获取 data 
+
+4）如果 `options.computed` 存在，执行 `initComputed(vm, opts.computed)`，添加 `vm._computedWatchers = Object.create(null)`，遍历 computed，执行：
+
+```javascript
+watchers[key] = new Watcher(
+  vm,
+  getter || noop, // computed key 对应的函数
+  noop,
+  computedWatcherOptions // { lazy: true }
+)
+```
+
+**依赖收集**
+
+在这里，computed 属性作为监听者 watchers[key]，实例化中 vm._watchers.push(this)，vm._watchers 会存储监听者。监听者中添加属性 `this.deps = []`，用于保存依赖项，当 watchers[key] 实例执行 `this.get()` 时，将会自动收集依赖 dep，也就是监听 dep 。
+
+```javascript
+get () {
+  pushTarget(this)
+  let value
+  const vm = this.vm
+  try {
+    value = this.getter.call(vm, vm)
+  } catch (e) {
+    if (this.user) {
+      handleError(e, vm, `getter for watcher "${this.expression}"`)
+    } else {
+      throw e
+    }
+  } finally {
+    // "touch" every property so they are all tracked as
+    // dependencies for deep watching
+    if (this.deep) {
+      traverse(value)
+    }
+    popTarget()
+    this.cleanupDeps()
+  }
+  return value
+}
+```
+
+而因为之前对 props、data 进行了 `observe` 监听操作，重写了其 `get` 函数：
+
+```javascript
+get: function reactiveGetter () {
+  const value = getter ? getter.call(obj) : val
+  if (Dep.target) {
+    dep.depend()
+    if (childOb) {
+      childOb.dep.depend()
+      if (Array.isArray(value)) {
+        dependArray(value)
+      }
+    }
+  }
+  return value
+},
+```
+
+dep 执行 `depend` 方法时，会执行 watchers[key] 实例的 `addDep(this)` 方法将 dep 添加为 watchers[key] 的依赖，而 `addDep` 中又会执行 dep 的 `addSub(this)`，给 dep 添加监听者 watchers[key]。
+
+```javascript
+addSub (sub: Watcher) {
+  this.subs.push(sub)
+}
+
+depend () {
+  if (Dep.target) {
+    Dep.target.addDep(this)
+  }
+}
+```
+
+```javascript
+addDep (dep: Dep) {
+  const id = dep.id
+  if (!this.newDepIds.has(id)) {
+    this.newDepIds.add(id)
+    this.newDeps.push(dep)
+    if (!this.depIds.has(id)) {
+      dep.addSub(this)
+    }
+  }
+}
+```
+
+watchers[key] 最后会执行依赖更新，更新 dep 中的 subs。
+
+```javascript
+cleanupDeps () {
+  let i = this.deps.length
+  while (i--) {
+    const dep = this.deps[i]
+    if (!this.newDepIds.has(dep.id)) {
+      dep.removeSub(this)
+    }
+  }
+  let tmp = this.depIds
+  this.depIds = this.newDepIds
+  this.newDepIds = tmp
+  this.newDepIds.clear()
+  tmp = this.deps
+  this.deps = this.newDeps
+  this.newDeps = tmp
+  this.newDeps.length = 0
+}
+```
+
+至此，dep 中的 `subs` 数组会保存对 watchers[key] 的引用，而 watchers[key] 中的 `deps` 数组保存对 dep 的引用。
+
+**依赖值更新触发监听者更新**
+
+除了对 props 、data 进行 `get` 的劫持，同时也对 `set` 进行了劫持：
+
+```javascript
+set: function reactiveSetter (newVal) {
+  const value = getter ? getter.call(obj) : val
+  /* eslint-disable no-self-compare */
+  // 如果新值和旧值相等或者新旧值都为 undefined，则直接 return
+  if (newVal === value || (newVal !== newVal && value !== value)) {
+    return
+  }
+  /* eslint-enable no-self-compare */
+  if (process.env.NODE_ENV !== 'production' && customSetter) {
+    customSetter()
+  }
+  // #7981: for accessor properties without setter
+  if (getter && !setter) return
+  if (setter) {
+    setter.call(obj, newVal)
+  } else {
+    val = newVal
+  }
+  // 更新子属性对象的监听对象
+  childOb = !shallow && observe(newVal)
+  // 执行更新
+  dep.notify()
+}
+```
+
+重点在最后一句 `dep.notify()`，这句话会通知 dep 的所有 watcher 监听者进行更新：
+
+```javascript
+notify () {
+  // stabilize the subscriber list first
+  const subs = this.subs.slice()
+  if (process.env.NODE_ENV !== 'production' && !config.async) {
+    // subs aren't sorted in scheduler if not running async
+    // we need to sort them now to make sure they fire in correct
+    // order
+    subs.sort((a, b) => a.id - b.id)
+  }
+  for (let i = 0, l = subs.length; i < l; i++) {
+    subs[i].update()
+  }
+}
+```
+
+watcher 中执行 update：
+
+```javascript
+update () {
+  /* istanbul ignore else */
+  if (this.lazy) {
+    this.dirty = true
+  } else if (this.sync) {
+    this.run()
+  } else {
+    queueWatcher(this)
+  }
+}
+```
+
+一般情况下会执行进 `queueWatcher(this)`，将当前值的更新推进队列中等待更新：
+
+```javascript
+export function queueWatcher (watcher: Watcher) {
+  const id = watcher.id
+  if (has[id] == null) {
+    has[id] = true
+    if (!flushing) {
+      queue.push(watcher)
+    } else {
+      // if already flushing, splice the watcher based on its id
+      // if already past its id, it will be run next immediately.
+      // 已经在执行更新了则将当前的监听器放入到 id 值大于 watcher.id 的监听器之前
+      let i = queue.length - 1
+      while (i > index && queue[i].id > watcher.id) {
+        i--
+      }
+      queue.splice(i + 1, 0, watcher)
+    }
+    // queue the flush
+    if (!waiting) {
+      waiting = true
+
+      if (process.env.NODE_ENV !== 'production' && !config.async) {
+        flushSchedulerQueue()
+        return
+      }
+      nextTick(flushSchedulerQueue)
+    }
+  }
+}
+```
+
+5）对于 computed，继续执行 `defineComputed(vm, key, userDef)`，Object.defineProperty 定义 vm[key]，对 get 进行劫持：
+
+```javascript
+const watcher = this._computedWatchers && this._computedWatchers[key]
+if (watcher) {
+  if (watcher.dirty) {
+    watcher.evaluate()
+  }
+  /**
+   * 如果 Dep.target 存在，则执行 watcher.depend()，因为 computed 依赖 dep 的值，dep 更新时自动更新 computed，但 computed 不会通知到使用 computed 变量的监听者，
+   * 需要给当前的监听者也添加上 computed 的 dep 依赖，等 dep 更新时，不只更新 computed，也会触发当前 watcher 的回调执行
+   */
+  if (Dep.target) {
+    watcher.depend()
+  }
+  return watcher.value
+}
+```
+
+6）如果 `options.watch` 存在，则执行 `initWatch(vm, opts.watch)`：
+
+```javascript
+function initWatch (vm: Component, watch: Object) {
+  for (const key in watch) {
+    const handler = watch[key]
+    if (Array.isArray(handler)) {
+      for (let i = 0; i < handler.length; i++) {
+        createWatcher(vm, key, handler[i])
+      }
+    } else {
+      createWatcher(vm, key, handler)
+    }
+  }
+}
+
+function createWatcher (
+  vm: Component,
+  expOrFn: string | Function,
+  handler: any,
+  options?: Object
+) {
+  if (isPlainObject(handler)) {
+    options = handler
+    handler = handler.handler
+  }
+  if (typeof handler === 'string') {
+    handler = vm[handler]
+  }
+  return vm.$watch(expOrFn, handler, options)
+}
+// $watch 跟 computed 流程不太一样，虽然都是创建 watcher 监听器，但 computed 主要是监听 dep 从 computed 函数中获取到值，expOrFn 为用户定义的 computed 函数，cb 为 noop；
+// 而 watch 是监听 dep 然后执行 cb 回调函数（watch 函数作为回调函数），expOrFn 为 watch 的 key，而 cb 为用户定义的 watch 函数；
+Vue.prototype.$watch = function (
+  expOrFn: string | Function,
+  cb: any,
+  options?: Object
+): Function {
+  const vm: Component = this
+  if (isPlainObject(cb)) {
+    return createWatcher(vm, expOrFn, cb, options)
+  }
+  options = options || {}
+  options.user = true
+  const watcher = new Watcher(vm, expOrFn, cb, options)
+  if (options.immediate) {
+    const info = `callback for immediate watcher "${watcher.expression}"`
+    pushTarget()
+    invokeWithErrorHandling(cb, vm, [watcher.value], vm, info)
+    popTarget()
+  }
+  return function unwatchFn () {
+    watcher.teardown()
+  }
+}
+```
+
+12. 执行 `initProvide(vm)`，处理 options.provided，如果 provided 为函数，则先执行 `prvided.call(vm)`，然后将执行结果赋值给 `vm._provided`；如果为对象，则直接赋值给 `vm._provided`
+
+13. 执行 `callHook(vm, 'created')`，触发 `created` 生命周期钩子函数，因为已经处理过 inject、props、methods、data、computed、watch、provided，因此这时 `this` 上可以获取到变量和函数了
+
+14. 执行 `vm.$mount(vm.$options.el)`
+
+## 响应式设置原理
+
+## virtual dom
+
+## diff 算法

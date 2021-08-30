@@ -93,6 +93,22 @@ export function initInternalComponent (vm: Component, options: InternalComponent
 }
 
 export function resolveConstructorOptions (Ctor: Class<Component>) {
+  /**
+   * Ctor.options 等于 Vue.options，因为实例的 constructor 指向的是其类 Vue，这时:
+   * options: {
+   *   _base: Vue,
+   *   components: {
+   *     KeepAlive,
+   *     Transition,
+   *     TransitionGroup
+   *   },
+   *   directives: {
+   *     modal,
+   *     show
+   *   },
+   *   filter: {}
+   * }
+   */
   let options = Ctor.options
   if (Ctor.super) {
     const superOptions = resolveConstructorOptions(Ctor.super)

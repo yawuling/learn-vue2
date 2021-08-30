@@ -70,6 +70,7 @@ function initProps (vm: Component, propsOptions: Object) {
   const keys = vm.$options._propKeys = []
   const isRoot = !vm.$parent
   // root instance props should be converted
+  // 非根组件时不对 props 进行深度监听
   if (!isRoot) {
     toggleObserving(false)
   }
@@ -103,6 +104,7 @@ function initProps (vm: Component, propsOptions: Object) {
     // static props are already proxied on the component's prototype
     // during Vue.extend(). We only need to proxy props defined at
     // instantiation here.
+    // 如果 vm[key] 不存在，则将 vm[key] 通过 Object.defineProperty 将 get 和 set 转到 vm._props[key] 上，因此我们才可以通过 this[key] 来直接获取到 props 上的变量
     if (!(key in vm)) {
       proxy(vm, `_props`, key)
     }
@@ -248,6 +250,10 @@ function createComputedGetter (key) {
       if (watcher.dirty) {
         watcher.evaluate()
       }
+      /**
+       * 如果 Dep.target 存在，则执行 watcher.depend()，因为 computed 依赖 dep 的值，dep 更新时自动更新 computed，但 computed 不会通知到使用 computed 变量的监听者，
+       * 需要给当前的监听者也添加上 computed 的 dep 依赖，等 dep 更新时，不只更新 computed，也会触发当前 watcher 的回调执行
+       */
       if (Dep.target) {
         watcher.depend()
       }
@@ -309,6 +315,7 @@ function createWatcher (
   handler: any,
   options?: Object
 ) {
+  // 提取 callback
   if (isPlainObject(handler)) {
     options = handler
     handler = handler.handler
@@ -345,6 +352,8 @@ export function stateMixin (Vue: Class<Component>) {
   Vue.prototype.$set = set
   Vue.prototype.$delete = del
 
+  // $watch 跟 computed 流程不太一样，虽然都是创建 watcher 监听器，但 computed 主要是监听 dep 从 computed 函数中获取到值，expOrFn 为用户定义的 computed 函数，cb 为 noop；
+  // 而 watch 是监听 dep 然后执行 cb 回调函数（watch 函数作为回调函数），expOrFn 为 watch 的 key，而 cb 为用户定义的 watch 函数；
   Vue.prototype.$watch = function (
     expOrFn: string | Function,
     cb: any,

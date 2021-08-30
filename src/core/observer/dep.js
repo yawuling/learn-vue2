@@ -20,10 +20,12 @@ export default class Dep {
     this.subs = []
   }
 
+  // 添加新的监听器 watcher
   addSub (sub: Watcher) {
     this.subs.push(sub)
   }
 
+  // 删除监听器 watcher
   removeSub (sub: Watcher) {
     remove(this.subs, sub)
   }
@@ -34,6 +36,7 @@ export default class Dep {
     }
   }
 
+  // 触发所有监听器的更新
   notify () {
     // stabilize the subscriber list first
     const subs = this.subs.slice()

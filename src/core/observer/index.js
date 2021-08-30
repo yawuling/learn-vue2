@@ -106,12 +106,14 @@ function copyAugment (target: Object, src: Object, keys: Array<string>) {
  * Attempt to create an observer instance for a value,
  * returns the new observer if successfully observed,
  * or the existing observer if the value already has one.
+ * 只监听对象类型，且非 vnode 对象
  */
 export function observe (value: any, asRootData: ?boolean): Observer | void {
   if (!isObject(value) || value instanceof VNode) {
     return
   }
   let ob: Observer | void
+  // 如果已经被监听了，则不再判断实例化 Observer
   if (hasOwn(value, '__ob__') && value.__ob__ instanceof Observer) {
     ob = value.__ob__
   } else if (
@@ -153,6 +155,7 @@ export function defineReactive (
     val = obj[key]
   }
 
+  // 深监听，也就是针对对象的属性也进行监听
   let childOb = !shallow && observe(val)
   Object.defineProperty(obj, key, {
     enumerable: true,
@@ -173,6 +176,7 @@ export function defineReactive (
     set: function reactiveSetter (newVal) {
       const value = getter ? getter.call(obj) : val
       /* eslint-disable no-self-compare */
+      // 如果新值和旧值相等或者新旧值都为 undefined，则直接 return
       if (newVal === value || (newVal !== newVal && value !== value)) {
         return
       }
@@ -187,7 +191,9 @@ export function defineReactive (
       } else {
         val = newVal
       }
+      // 更新子属性对象的监听对象
       childOb = !shallow && observe(newVal)
+      // 执行更新
       dep.notify()
     }
   })

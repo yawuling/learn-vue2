@@ -19,6 +19,7 @@ export function initAssetRegisters (Vue: GlobalAPI) {
         if (process.env.NODE_ENV !== 'production' && type === 'component') {
           validateComponentName(id)
         }
+        // isPlainObject 用于判断是不是对象，通过 options 对象来创建组件对象，Vue.extend(options)
         if (type === 'component' && isPlainObject(definition)) {
           definition.name = definition.name || id
           definition = this.options._base.extend(definition)

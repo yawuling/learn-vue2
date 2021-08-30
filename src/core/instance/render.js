@@ -35,6 +35,7 @@ export function initRender (vm: Component) {
 
   // $attrs & $listeners are exposed for easier HOC creation.
   // they need to be reactive so that HOCs using them are always updated
+  // 对父节点的 attrs 和 _parentListeners 添加响应式，当子组件对其进行调用时，能得到自动更新
   const parentData = parentVnode && parentVnode.data
 
   /* istanbul ignore else */

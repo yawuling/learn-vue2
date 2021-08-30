@@ -20,10 +20,15 @@ import platformDirectives from './directives/index'
 import platformComponents from './components/index'
 
 // install platform specific utils
+// 该函数为判断标签是否需要使用 prop 传参：input,textarea,option,select,progress,option,video
 Vue.config.mustUseProp = mustUseProp
+// 该函数为判断标签是否为保留的标签（dom官方标签）
 Vue.config.isReservedTag = isReservedTag
+// 该函数为判断标签属性是否为保留的标签属性（dom官方标签属性）：style,class，用于判断自定义组件中是否自动将 style、class 属性绑定到组件根结点上
 Vue.config.isReservedAttr = isReservedAttr
+// 该函数用于获取标签的所属类型，svg/math
 Vue.config.getTagNamespace = getTagNamespace
+// 该函数用于判断标签是否为 unknown 标签（即非浏览器可识别的标签，如果是服务端渲染，则统一都列为不可识别，因为服务端没有 dom 结构）
 Vue.config.isUnknownElement = isUnknownElement
 
 // install platform runtime directives & components

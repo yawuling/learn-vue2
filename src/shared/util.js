@@ -102,6 +102,7 @@ export function toNumber (val: string): number | string {
 /**
  * Make a map and return a function for checking if a key
  * is in that map.
+ * 将使用 , 分割的字符串初始化一个map，并返回获取 key 是否存在于 map 中的函数
  */
 export function makeMap (
   str: string,
