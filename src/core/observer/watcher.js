@@ -169,6 +169,7 @@ export default class Watcher {
     } else if (this.sync) {
       this.run()
     } else {
+      // 这里面会执行 watcher.before
       queueWatcher(this)
     }
   }

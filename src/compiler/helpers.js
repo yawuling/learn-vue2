@@ -39,6 +39,7 @@ export function addRawAttr (el: ASTElement, name: string, value: any, range?: Ra
   el.attrsList.push(rangeSetItem({ name, value }, range))
 }
 
+// element 添加指令 directive 数组
 export function addDirective (
   el: ASTElement,
   name: string,
@@ -66,6 +67,7 @@ function prependModifierMarker (symbol: string, name: string, dynamic?: boolean)
     : symbol + name // mark the event as captured
 }
 
+// 事件处理，给 el 添加 events 对象：el.events = {} ，存储各个事件的 handler 函数数组，el.events[name] = [handler]
 export function addHandler (
   el: ASTElement,
   name: string,

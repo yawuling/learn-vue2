@@ -7,7 +7,7 @@ import {
   baseWarn
 } from 'compiler/helpers'
 
-function transformNode (el: ASTElement, options: CompilerOptions) {
+function transformNode (el: ASTElement, options: CompilerOptions) { // 获取 class，给 element 绑定 staticClass 属性，再获取 :class ，给 element 绑定 classBinding 属性
   const warn = options.warn || baseWarn
   const staticClass = getAndRemoveAttr(el, 'class')
   if (process.env.NODE_ENV !== 'production' && staticClass) {

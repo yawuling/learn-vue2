@@ -187,7 +187,7 @@ export function mountComponent (
     }
   } else {
     updateComponent = () => {
-      vm._update(vm._render(), hydrating)
+      vm._update(vm._render(), hydrating) // 这里 _render 是之前 vue 初始化时 renderMixin 挂在原型上的
     }
   }
 

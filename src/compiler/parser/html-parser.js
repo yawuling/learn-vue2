@@ -18,15 +18,15 @@ const attribute = /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s
 const dynamicArgAttribute = /^\s*((?:v-[\w-]+:|@|:|#)\[[^=]+?\][^\s"'<>\/=]*)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/
 const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z${unicodeRegExp.source}]*`
 const qnameCapture = `((?:${ncname}\\:)?${ncname})`
-const startTagOpen = new RegExp(`^<${qnameCapture}`)
-const startTagClose = /^\s*(\/?)>/
-const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`)
+const startTagOpen = new RegExp(`^<${qnameCapture}`) // 判断是否为开始标签的开头 <
+const startTagClose = /^\s*(\/?)>/ // 判断是否为开始标签的结尾 >
+const endTag = new RegExp(`^<\\/${qnameCapture}[^>]*>`) // 判断是否为闭标签， </xxx>
 const doctype = /^<!DOCTYPE [^>]+>/i
 // #7298: escape - to avoid being passed as HTML comment when inlined in page
-const comment = /^<!\--/
-const conditionalComment = /^<!\[/
+const comment = /^<!\--/ // html 注释，<!-- xxx -->
+const conditionalComment = /^<!\[/ // IE 类型注释的判断，<![if !IE]><![endif]>
 
-// Special Elements (can contain anything)
+// Special Elements (can contain anything)，文本标签，可以包含任何内容
 export const isPlainTextElement = makeMap('script,style,textarea', true)
 const reCache = {}
 
@@ -106,7 +106,7 @@ export function parseHTML (html, options) {
         // Start tag:
         const startTagMatch = parseStartTag()
         if (startTagMatch) {
-          handleStartTag(startTagMatch)
+          handleStartTag(startTagMatch) // 处理 html 节点，将 attrs 解析为 ast，处理为对象：{ tag: tagName, lowerCasedTag: tagName.toLowerCase(), attrs: Array({ name, value, start, end }), start, end }，这时候 attrs 还只是原始字符串的值
           if (shouldIgnoreFirstNewline(startTagMatch.tagName, html)) {
             advance(1)
           }
@@ -184,7 +184,7 @@ export function parseHTML (html, options) {
     html = html.substring(n)
   }
 
-  function parseStartTag () {
+  function parseStartTag () { // 解释标签，并获取 attrs 属性
     const start = html.match(startTagOpen)
     if (start) {
       const match = {
@@ -214,7 +214,7 @@ export function parseHTML (html, options) {
     const unarySlash = match.unarySlash
 
     if (expectHTML) {
-      if (lastTag === 'p' && isNonPhrasingTag(tagName)) {
+      if (lastTag === 'p' && isNonPhrasingTag(tagName)) { // isNonPhrasingTag 判断是否为文本标签
         parseEndTag(lastTag)
       }
       if (canBeLeftOpenTag(tagName) && lastTag === tagName) {
@@ -252,7 +252,7 @@ export function parseHTML (html, options) {
     }
   }
 
-  function parseEndTag (tagName, start, end) {
+  function parseEndTag (tagName, start, end) { // 寻找符合的标签进行闭合，open tag 使用一个 stack 堆进行存储，对于 br 或者 p 单独处理，这里的 stack 是保存未处理过的 ast 标签
     let pos, lowerCasedTagName
     if (start == null) start = index
     if (end == null) end = index

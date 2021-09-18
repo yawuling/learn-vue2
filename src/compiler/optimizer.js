@@ -97,7 +97,21 @@ function markStaticRoots (node: ASTNode, isInFor: boolean) {
   }
 }
 
-function isStatic (node: ASTNode): boolean {
+/**
+ * 区分是否为静态节点：
+ * 1）非 expression 表达式；
+ * 2）为 text 文本；
+ * 3）添加了 v-pre 或者同时满足以下：
+ *  a)没有 v-bind 
+ *  b)没有 v-if、v-for
+ *  c)非组件
+ *  d)非 slot、component 标签
+ *  e)为平台保留标签
+ *  f)非 template 标签或（非 template for 循环或其祖辈标签 template 均无 for 循环）
+ * @param {*} node 
+ * @returns 
+ */
+function isStatic (node: ASTNode): boolean { 
   if (node.type === 2) { // expression
     return false
   }

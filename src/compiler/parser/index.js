@@ -82,19 +82,19 @@ export function parse (
 ): ASTElement | void {
   warn = options.warn || baseWarn
 
-  platformIsPreTag = options.isPreTag || no
-  platformMustUseProp = options.mustUseProp || no
-  platformGetTagNamespace = options.getTagNamespace || no
-  const isReservedTag = options.isReservedTag || no
+  platformIsPreTag = options.isPreTag || no // 判断是不是 'pre' 标签
+  platformMustUseProp = options.mustUseProp || no // 该函数为判断标签是否需要使用 prop 传参：input,textarea,option,select,progress 的 value；option 的 selected；input 的 checked；video 的 muted
+  platformGetTagNamespace = options.getTagNamespace || no // 该函数用于获取标签的所属类型，svg/math
+  const isReservedTag = options.isReservedTag || no // 该函数为判断标签是否为保留的标签（dom官方标签）
   maybeComponent = (el: ASTElement) => !!(
     el.component ||
     el.attrsMap[':is'] ||
     el.attrsMap['v-bind:is'] ||
     !(el.attrsMap.is ? isReservedTag(el.attrsMap.is) : isReservedTag(el.tag))
-  )
-  transforms = pluckModuleFunction(options.modules, 'transformNode')
-  preTransforms = pluckModuleFunction(options.modules, 'preTransformNode')
-  postTransforms = pluckModuleFunction(options.modules, 'postTransformNode')
+  ) // 判断是不是组件
+  transforms = pluckModuleFunction(options.modules, 'transformNode') // 用 map 获取 modules 对象数组中每个对象 transformNode 属性的值，并 filter 过滤掉为 null/undefined/0/false 的值
+  preTransforms = pluckModuleFunction(options.modules, 'preTransformNode') // 用 map 获取 modules 对象数组中每个对象 preTransformNode 属性的值，并 filter 过滤掉为 null/undefined/0/false 的值
+  postTransforms = pluckModuleFunction(options.modules, 'postTransformNode') // 用 map 获取 modules 对象数组中每个对象 postTransformNode 属性的值，并 filter 过滤掉为 null/undefined/0/false 的值
 
   delimiters = options.delimiters
 
@@ -114,7 +114,7 @@ export function parse (
     }
   }
 
-  function closeElement (element) {
+  function closeElement (element) { // 标签关闭，对其进行解析
     trimEndingWhitespace(element)
     if (!inVPre && !element.processed) {
       element = processElement(element, options)
@@ -141,12 +141,12 @@ export function parse (
     }
     if (currentParent && !element.forbidden) {
       if (element.elseif || element.else) {
-        processIfConditions(element, currentParent)
+        processIfConditions(element, currentParent) // 判断前一个兄弟元素是否有 v-if，有的话，则将当前元素的 elseIf 加进前一个兄弟元素的条件处理 ifConditions 数组中
       } else {
         if (element.slotScope) {
           // scoped slot
           // keep it in the children list so that v-else(-if) conditions can
-          // find it as the prev node.
+          // find it as the prev node.如果 element 有 slotTarget 属性，则给父元素的 scopedSlots 设置
           const name = element.slotTarget || '"default"'
           ;(currentParent.scopedSlots || (currentParent.scopedSlots = {}))[name] = element
         }
@@ -214,7 +214,7 @@ export function parse (
     shouldDecodeNewlinesForHref: options.shouldDecodeNewlinesForHref,
     shouldKeepComment: options.comments,
     outputSourceRange: options.outputSourceRange,
-    start (tag, attrs, unary, start, end) {
+    start (tag, attrs, unary, start, end) { // 处理开始标签
       // check namespace.
       // inherit parent ns if there is one
       const ns = (currentParent && currentParent.ns) || platformGetTagNamespace(tag)
@@ -269,7 +269,7 @@ export function parse (
       }
 
       if (!inVPre) {
-        processPre(element)
+        processPre(element) // 解析 v-pre 指令，给 element 挂载上 once: true 属性
         if (element.pre) {
           inVPre = true
         }
@@ -278,18 +278,18 @@ export function parse (
         inPre = true
       }
       if (inVPre) {
-        processRawAttrs(element)
+        processRawAttrs(element) // 将 attrsList 转成 attrs，value 做一层 JSON.stringify
       } else if (!element.processed) {
         // structural directives
-        processFor(element)
-        processIf(element)
-        processOnce(element)
+        processFor(element) // 解析 v-for 指令，给 element 挂载上 { for: string, alias: string, iterator1?: string, iterator2?: string } 属性
+        processIf(element) // 解析 v-if 指令，给 element 挂载上 if（同时挂载上 ifConditions 数组） 或 else 或 elseif
+        processOnce(element) // 解析 v-once 指令，给 element 挂载上 once: true 属性
       }
 
       if (!root) {
         root = element
         if (process.env.NODE_ENV !== 'production') {
-          checkRootConstraints(root)
+          checkRootConstraints(root) // 检查是否使用了 slot 或 template 标签，或者 v-for ，如果是，进行警告
         }
       }
 
@@ -301,7 +301,7 @@ export function parse (
       }
     },
 
-    end (tag, start, end) {
+    end (tag, start, end) { // 标签关闭，标签 stack 栈出栈，这里跟 html-parser.js 中是两个 stack，这里是保存处理过的 element ast 对象
       const element = stack[stack.length - 1]
       // pop stack
       stack.length -= 1
@@ -309,10 +309,10 @@ export function parse (
       if (process.env.NODE_ENV !== 'production' && options.outputSourceRange) {
         element.end = end
       }
-      closeElement(element)
+      closeElement(element) // 标签关闭，对其进行解析
     },
 
-    chars (text: string, start: number, end: number) {
+    chars (text: string, start: number, end: number) { // 处理标签内的字符串
       if (!currentParent) {
         if (process.env.NODE_ENV !== 'production') {
           if (text === template) {
@@ -341,7 +341,7 @@ export function parse (
       if (inPre || text.trim()) {
         text = isTextTag(currentParent) ? text : decodeHTMLCached(text)
       } else if (!children.length) {
-        // remove the whitespace-only node right after an opening tag
+        // remove the whitespace-only node right after an opening tag，开始标签后面去掉空格
         text = ''
       } else if (whitespaceOption) {
         if (whitespaceOption === 'condense') {
@@ -361,7 +361,7 @@ export function parse (
         }
         let res
         let child: ?ASTNode
-        if (!inVPre && text !== ' ' && (res = parseText(text, delimiters))) {
+        if (!inVPre && text !== ' ' && (res = parseText(text, delimiters))) { // parseText 解析 {{ }} 语法
           child = {
             type: 2,
             expression: res.expression,
@@ -434,7 +434,7 @@ export function processElement (
   element: ASTElement,
   options: CompilerOptions
 ) {
-  processKey(element)
+  processKey(element) // 处理 key，给 element 添加 key: exp 的属性
 
   // determine whether this is a plain element after
   // removing structural attributes
@@ -444,14 +444,14 @@ export function processElement (
     !element.attrsList.length
   )
 
-  processRef(element)
-  processSlotContent(element)
-  processSlotOutlet(element)
-  processComponent(element)
+  processRef(element) // 处理 ref，给 element 添加属性 ref: string，且判断是否在 for 循环中，添加 refInFor: boolean 属性
+  processSlotContent(element) // 处理 slot/slot-scope/v-slot，如果是 v-slot 且元素非 template，则创建一个 template 的节点，将 element 的 children 转移到 template 下
+  processSlotOutlet(element) // 处理 <slot name="xxx"></slot> 标签，如果有 name，给 element 添加 slotName: string 的属性
+  processComponent(element) // 处理 is="xxx" component 和 inline-template，给 element 添加 component: xxx 属性以及 inlineTemplate: boolean 属性
   for (let i = 0; i < transforms.length; i++) {
     element = transforms[i](element, options) || element
-  }
-  processAttrs(element)
+  } // 包含 class 处理 和 style 处理；1、获取 class，给 element 绑定 staticClass 属性，再获取 :class ，给 element 绑定 classBinding 属性；2、获取 style，给 element 绑定 staticStyle 属性，再获取 :class ，给 element 绑定 styleBinding 属性
+  processAttrs(element) // 处理 attribute 属性，针对 v-xxx, v-bind:xxx, :xxx 进行指令解析；对于 v-on ，进行事件处理，给 element 添加 events/nativeEvents 对象，存储事件的监听函数；对于指令，则推入到 element.directives 数组中；对于普通属性，则推入到 element.attrs 数组中
   return element
 }
 
@@ -634,7 +634,7 @@ function processSlotContent (el) {
   const slotTarget = getBindingAttr(el, 'slot')
   if (slotTarget) {
     el.slotTarget = slotTarget === '""' ? '"default"' : slotTarget
-    el.slotTargetDynamic = !!(el.attrsMap[':slot'] || el.attrsMap['v-bind:slot'])
+    el.slotTargetDynamic = !!(el.attrsMap[':slot'] || el.attrsMap['v-bind:slot']) // 是否为动态的 slot
     // preserve slot as an attribute for native shadow DOM compat
     // only for non-scoped slots.
     if (el.tag !== 'template' && !el.slotScope) {

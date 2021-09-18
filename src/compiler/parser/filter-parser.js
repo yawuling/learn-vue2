@@ -2,7 +2,7 @@
 
 const validDivisionCharRE = /[\w).+\-_$\]]/
 
-export function parseFilters (exp: string): string {
+export function parseFilters (exp: string): string { // 处理 filter |
   let inSingle = false
   let inDouble = false
   let inTemplateString = false

@@ -454,6 +454,260 @@ Vue.prototype.$watch = function (
 
 14. 执行 `vm.$mount(vm.$options.el)`
 
+1）如果没有 options.render ，则为 template 渲染，template 渲染可以通过获取 el 标签下的 html 内容作为 template，也可以开发自己传入 options.template
+
+2）对 template 字符串进行解析：
+
+```javascript
+const { render, staticRenderFns } = compileToFunctions(template, {
+  outputSourceRange: process.env.NODE_ENV !== 'production',
+  shouldDecodeNewlines,
+  shouldDecodeNewlinesForHref,
+  delimiters: options.delimiters,
+  comments: options.comments
+}, this)
+```
+
+之后会将获取到的 render 赋值给 options.render。
+
+**接下来为 template 的 ast 解析**
+
+3）compileToFunctions 函数是经过多个闭包函数得到的，先来梳理这个闭包关系
+
+`src/platforms/web/compiler/index.js`:
+
+```javascript
+import { baseOptions } from './options'
+import { createCompiler } from 'compiler/index'
+
+const { compile, compileToFunctions } = createCompiler(baseOptions)
+
+export { compile, compileToFunctions }
+```
+
+这里 createCompiler(`src/compiler/index.js`) 又是一个闭包，主要为传入 baseOptions，这个 options 在后面多个地方使用。
+
+`src/platforms/web/compiler/options.js`:
+
+```javascript
+import {
+  isPreTag,
+  mustUseProp,
+  isReservedTag,
+  getTagNamespace
+} from '../util/index'
+
+import modules from './modules/index'
+import directives from './directives/index'
+import { genStaticKeys } from 'shared/util'
+import { isUnaryTag, canBeLeftOpenTag } from './util'
+
+export const baseOptions: CompilerOptions = {
+  expectHTML: true,
+  modules, // 提供了对 class、:class、style、:style，以及 input 标签的 :type、v-for、v-if 的解析；transformNode 函数数组分别有处理 class 和 style 的解析函数；preTransformNode 为解析 input 标签的解析函数
+  directives, // 提供了 v-model、v-html、v-text 指令的解析
+  isPreTag, // 是否为 pre 标签
+  isUnaryTag, // 是否为单标签，area,base,br,col,embed,frame,hr,img,input,isindex,keygen,link,meta,param,source,track,wbr
+  mustUseProp, // 对于表单的 value、option 的 selected、type="checkbox" 的 input 的 checked、video 的 muted，需使用 prop 参数传递
+  canBeLeftOpenTag, // 是否可以自闭合标签，colgroup,dd,dt,li,options,p,td,tfoot,th,thead,tr,source
+  isReservedTag, // 是否为平台保留标签（跟保留字类似），即所有的 html 标签
+  getTagNamespace, // 获取标签是否为 svg 类型的标签（svg、circle、g等），或者是否为 math 标签
+  staticKeys: genStaticKeys(modules) // 是否为静态属性（ staticClass, staticStyle），标签中的 class 和 style 会被保存在 ast 对象中的 staticClass 和 staticStyle 属性
+}
+```
+
+`src/compiler/index.js`:
+
+```javascript
+import { parse } from './parser/index'
+import { optimize } from './optimizer'
+import { generate } from './codegen/index'
+import { createCompilerCreator } from './create-compiler'
+
+// `createCompilerCreator` allows creating compilers that use alternative
+// parser/optimizer/codegen, e.g the SSR optimizing compiler.
+// Here we just export a default compiler using the default parts.
+export const createCompiler = createCompilerCreator(function baseCompile (
+  template: string,
+  options: CompilerOptions
+): CompiledResult {
+  const ast = parse(template.trim(), options)
+  if (options.optimize !== false) {
+    optimize(ast, options)
+  }
+  const code = generate(ast, options)
+  return {
+    ast,
+    render: code.render,
+    staticRenderFns: code.staticRenderFns
+  }
+})
+```
+
+这里 createCompilerCreator(`src/compiler/create-compiler.js`) 仍是个闭包，主要传入 baseCompile 解析函数，这里面主要为 `parse`（解析 ast） 函数，以及 `generate`（将 ast 进行加工） 函数 。
+
+`src/compiler/create-compiler.js`:
+
+```javascript
+import { extend } from 'shared/util'
+import { detectErrors } from './error-detector'
+import { createCompileToFunctionFn } from './to-function'
+
+export function createCompilerCreator (baseCompile: Function): Function {
+  return function createCompiler (baseOptions: CompilerOptions) {
+    function compile (
+      template: string,
+      options?: CompilerOptions // 这里传入的将是上面我们处理过的 new Vue(options) 中的 options
+    ): CompiledResult {
+      const finalOptions = Object.create(baseOptions)
+
+      ...
+      中间为对 finalOptions 进行处理，将 options 中的 modules、directives 进行合并，将 options 其他 key 赋值给 finalOptions
+      ...
+
+      const compiled = baseCompile(template.trim(), finalOptions)
+      if (process.env.NODE_ENV !== 'production') {
+        detectErrors(compiled.ast, warn)
+      }
+      compiled.errors = errors
+      compiled.tips = tips
+      return compiled
+    }
+
+    return {
+      compile,
+      compileToFunctions: createCompileToFunctionFn(compile)
+    }
+  }
+}
+```
+
+这个闭包的作用是传入 basecompile，而 createCompileToFunctionFn(`src/compiler/to-function.js`) 依旧是个闭包。
+
+`src/compiler/to-function.js`:
+
+```javascript
+export function createCompileToFunctionFn (compile: Function): Function {
+  const cache = Object.create(null)
+
+  return function compileToFunctions (
+    template: string,
+    options?: CompilerOptions,
+    vm?: Component
+  ): CompiledFunctionResult {
+    options = extend({}, options) // 对 options 进行浅拷贝
+    const warn = options.warn || baseWarn
+    delete options.warn
+
+    // check cache
+    const key = options.delimiters
+      ? String(options.delimiters) + template
+      : template
+    if (cache[key]) {
+      return cache[key]
+    }
+
+    // compile
+    const compiled = compile(template, options)
+
+    // turn code into functions
+    const res = {}
+    const fnGenErrors = []
+    res.render = createFunction(compiled.render, fnGenErrors)
+    res.staticRenderFns = compiled.staticRenderFns.map(code => {
+      return createFunction(code, fnGenErrors)
+    })
+
+    return (cache[key] = res)
+  }
+}
+```
+
+这个闭包的作用在于将 template 的解析结果进行缓存，避免重复解析消耗性能。
+
+4）代码执行进入 `src/compiler/create-compiler.js` 的 `const compiled = baseCompile(template.trim(), finalOptions)`，走进 `src/compiler/index.js` 的 basecompile，主要看 `const ast = parse(template.trim(), options)` 的执行，对 template 进行 ast 解析，进入 `src/compiler/parser/index.js`。
+
+5）对 template html 模板字符串进行 ast 解析
+
+```javascript
+const ast = parse(template.trim(), options)
+```
+
+进入到 `src/compiler/parser/index.js`，查看 `parse` 函数，里面调用了 `src/compiler/parser/html-parser.js` 的 `parseHTML`，定义了 `start` 处理开始标签、`end` 处理结束标签、`chars` 处理字符串、`comment` 处理注释，`parseHTML` 主要作用为使用正则表达式对 template 进行逐步解析，解析出标签名、属性、start、end。之后在 `start`、`end`、`chars` 函数中解析标签的 ref、v-if、v-for、slot、v-bind、component、attrs 等。
+
+解析后的 ast 值为：
+
+![](https://tva1.sinaimg.cn/large/008i3skNly1guki9cy8xkj612i0u0djx02.jpg)
+
+6）generate 将 ast 转成函数字符串
+
+```javascript
+const code = generate(ast, options)
+// code 值为 'with(this){return _c('div',{attrs:{"id":"app"}},[_c('div',[_c('div',{ref:"firstDom"},[_v("data: "+_s(firstName))]),_v(" "),_c('div',[_c('input',{directives:[{name:"model",rawName:"v-model",value:(firstName),expression:"firstName"}],domProps:{"value":(firstName)},on:{"input":function($event){if($event.target.composing)return;firstName=$event.target.value}}}),_v(" "),_c('button',{on:{"click":reset}},[_v("reset")])]),_v(" "),_c('div',[_v("computed: "+_s(fullName))]),_v(" "),_c('div',[_v("watch: "+_s(reverseFirstName))])])])}'
+```
+
+之后通过 `new Function(code)` 将 code 字符串转换为 function，便于执行，将 function 赋值给 options.render
+
+```javascript
+function render () {
+  with(this) {
+    return _c('div', {
+      attrs: {
+        "id": "app"
+      }
+    }, [_c('div', [_c('div', {
+      ref: "firstDom"
+    }, [_v("data: " + _s(firstName))]), _v(" "), _c('div', [_c('input', {
+      directives: [{
+        name: "model",
+        rawName: "v-model",
+        value: (firstName),
+        expression: "firstName"
+      }],
+      domProps: {
+        "value": (firstName)
+      },
+      on: {
+        "input": function ($event) {
+          if ($event.target.composing) return;
+          firstName = $event.target.value
+        }
+      }
+    }), _v(" "), _c('button', {
+      on: {
+        "click": reset
+      }
+    }, [_v("reset")])]), _v(" "), _c('div', [_v("computed: " + _s(fullName))]), _v(" "), _c('div', [_v("watch: " + _s(reverseFirstName))])])])
+  }
+}
+```
+
+**ast解析结束**
+
+15. 进入到 `src/core/instance/lifecycle.js` 中的 `mountComponent` 函数：
+
+触发 `callHook(vm, 'beforeMount')` 生命周期函数。
+
+```javascript
+let updateComponent
+updateComponent = () => {
+  vm._update(vm._render(), hydrating) // 这里 _render 是之前 vue 初始化时 renderMixin 挂在原型上的
+}
+new Watcher(vm, updateComponent, noop, {
+  before () {
+    if (vm._isMounted && !vm._isDestroyed) {
+      callHook(vm, 'beforeUpdate')
+    }
+  }
+}, true /* isRenderWatcher */)
+```
+
+创建一个监听器，执行 `vm._update(vm.render(), hydrating)`，因为 data、props、computed 中的变量在 vue 实例化 create 阶段就已经设置了原型 set、get 拦截，因此 `render` 函数本质上是一个更大一点的监听器，跟 computed 的变量类似，当执行 `render` 时，依赖的 data、props、computed 变量会自动进行依赖收集，这样等 data、props、computed 更新时，会触发重新执行 `render` 函数。
+
+创建一个新的 watcher 时，还传入了 `before` 参数，在每次更新的时候，会先触发 `callHook(vm, 'beforeUpdate')` 生命周期函数。
+
+16. 创建监听器后，会立马执行一次监听器的 get 函数，进而触发 `src/core/instance/render.js` 的 `_render` 函数
+
 ## 响应式设置原理
 
 ## virtual dom
