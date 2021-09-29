@@ -724,6 +724,8 @@ if (!prevVnode) {
 
 当实例首次渲染时，执行 `vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)`；如果为非首次渲染，则表示页面上已经渲染内容了，这时候执行 `vm.$el = vm.__patch__(prevVnode, vnode)`，这里将会进行节点 diff 计算（diff 算法）。
 
+> diff 算法先提前看下其他人分析的主要逻辑，那么看下面就比较清晰了：https://segmentfault.com/a/1190000008782928
+
 18. 接下来看 `vm.__patch__`(src/platforms/web/runtime/index.js)，`patch` 函数来自 `src/platforms/web/runtime/patch.js`,
 
 ```javascript
