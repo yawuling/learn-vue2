@@ -75,7 +75,7 @@ export function updateListeners (
       )
     } else if (isUndef(old)) {
       if (isUndef(cur.fns)) {
-        cur = on[name] = createFnInvoker(cur, vm)
+        cur = on[name] = createFnInvoker(cur, vm) // 创建另一个函数来绑定事件，函数里面执行 fns 回调函数数组，在节点更新的时候，就不用对事件先 remove 再 add，直接更新 fns 即可
       }
       if (isTrue(event.once)) {
         cur = on[name] = createOnceHandler(event.name, cur, event.capture)

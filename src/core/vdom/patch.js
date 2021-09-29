@@ -166,7 +166,7 @@ export function createPatchFunction (backend) {
       vnode.elm = vnode.ns
         ? nodeOps.createElementNS(vnode.ns, tag)
         : nodeOps.createElement(tag, vnode)
-      setScope(vnode)
+      setScope(vnode) // 设置 .vue 问卷中样式 scoped 的标签属性
 
       /* istanbul ignore if */
       if (__WEEX__) {
@@ -188,8 +188,13 @@ export function createPatchFunction (backend) {
           insert(parentElm, vnode.elm, refElm)
         }
       } else {
-        createChildren(vnode, children, insertedVnodeQueue)
+        createChildren(vnode, children, insertedVnodeQueue) // 递归创建子节点
         if (isDef(data)) {
+          // 触发标签创建的 create 钩子（非vue实例的 create），执行 src/platforms/web/runtime/modules/index.js 定义好的钩子
+          // 处理标签的 attrs、class、dom-props、event、style、transition
+          // 标签属性设置、类名设置、dom 标签节点属性设置，如 input.value 、事件绑定、style 设置、transition 组件的 enter 设置
+          // vue 的事件绑定是用 addEventListener，直接给目标节点绑定事件，与 preact 一致；
+          // 而 react 是使用事件合成机制，通过事件冒泡（事件委托）来实现，事件绑定在 document 上，通过冒泡方式来触发对应节点的事件
           invokeCreateHooks(vnode, insertedVnodeQueue)
         }
         insert(parentElm, vnode.elm, refElm)
@@ -207,6 +212,7 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // 创建组件
   function createComponent (vnode, insertedVnodeQueue, parentElm, refElm) {
     let i = vnode.data
     if (isDef(i)) {
@@ -281,6 +287,7 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // 递归调用 createElm 对子节点进行创建
   function createChildren (vnode, children, insertedVnodeQueue) {
     if (Array.isArray(children)) {
       if (process.env.NODE_ENV !== 'production') {
@@ -315,6 +322,7 @@ export function createPatchFunction (backend) {
   // set scope id attribute for scoped CSS.
   // this is implemented as a special case to avoid the overhead
   // of going through the normal attribute patching process.
+  // 设置 .vue 文件中样式 scoped 的标签属性，如果当前 vnode 没有 scoped，则向上寻找父级 vnode 的 scoped
   function setScope (vnode) {
     let i
     if (isDef(i = vnode.fnScopeId)) {
@@ -401,6 +409,19 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // diff 的同级比较算法：
+  // 定义 oldStartIdx, oldEndIdx, newStartIdx, newEndIdx, oldStartVnode, oldEndVnode, newStartVnode, newEndVnode
+  // sameVnode 比较时，如果 key 相同（2个 key 为 undefined 也相同）且构造函数相同 asyncFactory (如同个 html 标签或者同个 vue 组件)，则认为相同，可进行复用
+  // 当 oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx 时
+  // 1. 比较 oldStartVnode 和 newStartVnode，如果为同个 vnode，则进行 patchVnode, oldStartIdx + 1, newStartIdx + 1
+  // 2. 比较 oldEndVnode 和 newEndVnode，如果为同个 vnode，则进行 patchVnode, oldEndIdx - 1, newEndIdx - 1
+  // 3. 比较 oldStartVnode 和 newEndVnode，如果为同个 vnode，则进行 patchVnode, oldStartIdx + 1, newEndIdx - 1
+  // 4. 比较 oldEndVnode 和 newStartVnode，如果为同个 vnode，则进行 patchVnode, oldEndIdx - 1, newStartIdx + 1
+  // 5. 找出 newStartVnode 在 oldCh 中的 sameVnode 的下标 idxInOld, newStartIdx + 1, oldCh[idxInOld] 设置为 undefined
+  //
+  // 当循环结束时：
+  // 1. 若 newCh 剩余节点时 ( oldStartIdx > oldEndIdx), 将剩下的 newCh add 上
+  // 2. 否则，即 oldCh 剩余节点，将剩下的 oldCh remove 掉
   function updateChildren (parentElm, oldCh, newCh, insertedVnodeQueue, removeOnly) {
     let oldStartIdx = 0
     let newStartIdx = 0
@@ -498,6 +519,9 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // oldVnode 与 vnode 相同的情况下，对 vnode 和 vnode.elm进行更新
+  // 如果 oldVnode 子节点为 text，则走 text 更新；
+  // 否则对子节点进行递归遍历更新：updateChildren
   function patchVnode (
     oldVnode,
     vnode,
@@ -697,6 +721,7 @@ export function createPatchFunction (backend) {
     }
   }
 
+  // diff 算法
   return function patch (oldVnode, vnode, hydrating, removeOnly) {
     if (isUndef(vnode)) {
       if (isDef(oldVnode)) invokeDestroyHook(oldVnode)
@@ -714,8 +739,10 @@ export function createPatchFunction (backend) {
       const isRealElement = isDef(oldVnode.nodeType)
       if (!isRealElement && sameVnode(oldVnode, vnode)) {
         // patch existing root node
+        // 如果 oldVnode 非真实 dom 节点，且 oldVnode 和 vnode 为同一 vnode，则进行 patchVnode
         patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)
       } else {
+        // oldVnode 为真实 dom 节点或者 oldVnode 与 vnode 不相同，创建新节点
         if (isRealElement) {
           // mounting to a real element
           // check if this is server-rendered content and if we can perform

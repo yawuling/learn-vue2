@@ -702,14 +702,161 @@ new Watcher(vm, updateComponent, noop, {
 }, true /* isRenderWatcher */)
 ```
 
-创建一个监听器，执行 `vm._update(vm.render(), hydrating)`，因为 data、props、computed 中的变量在 vue 实例化 create 阶段就已经设置了原型 set、get 拦截，因此 `render` 函数本质上是一个更大一点的监听器，跟 computed 的变量类似，当执行 `render` 时，依赖的 data、props、computed 变量会自动进行依赖收集，这样等 data、props、computed 更新时，会触发重新执行 `render` 函数。
+创建一个监听器 watcher ，执行 `vm._update(vm._render(), hydrating)`，这里 _render 是之前 vue 初始化时 renderMixin 挂在原型上的，里面会执行通过 template 解析获取到的 `render` 函数，因为 data、props、computed 中的变量在 vue 实例化 create 阶段就已经设置了原型 set、get 拦截，因此 `render` 函数本质上是一个更大一点的监听器，跟 computed 的变量类似，当执行 `render` 时，依赖的 data、props、computed 变量会自动进行依赖收集，这样等 data、props、computed 更新时，会触发重新执行 `render` 函数。
 
 创建一个新的 watcher 时，还传入了 `before` 参数，在每次更新的时候，会先触发 `callHook(vm, 'beforeUpdate')` 生命周期函数。
 
-16. 创建监听器后，会立马执行一次监听器的 get 函数，进而触发 `src/core/instance/render.js` 的 `_render` 函数
+16. 创建监听器后，会立马执行一次监听器的 get 函数，进而触发 `src/core/instance/render.js` 的 `_render` 函数，之后触发 template 解析获得的 `render` 函数，之后得到一个 virtual dom 的 vnode 节点。
 
-## 响应式设置原理
+17. 执行 `vm._update(vm._render(), hydrating)` ，从 vm._render() 获取到一个 vnode 实例，执行进入 `_update` (src/core/instance/lifecycle.js)，执行：
 
-## virtual dom
+```javascript
+if (!prevVnode) {
+  // initial render
+  vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)
+} else {
+  // updates
+  vm.$el = vm.__patch__(prevVnode, vnode)
+}
+```
 
-## diff 算法
+当实例首次渲染时，执行 `vm.$el = vm.__patch__(vm.$el, vnode, hydrating, false /* removeOnly */)`；如果为非首次渲染，则表示页面上已经渲染内容了，这时候执行 `vm.$el = vm.__patch__(prevVnode, vnode)`，这里将会进行节点 diff 计算（diff 算法）。
+
+18. 接下来看 `vm.__patch__`(src/platforms/web/runtime/index.js)，`patch` 函数来自 `src/platforms/web/runtime/patch.js`,
+
+```javascript
+/* @flow */
+
+import * as nodeOps from 'web/runtime/node-ops' // dom 节点操作的方法封装
+import { createPatchFunction } from 'core/vdom/patch'
+import baseModules from 'core/vdom/modules/index' // 
+import platformModules from 'web/runtime/modules/index'
+
+// the directive module should be applied last, after all
+// built-in modules have been applied.
+const modules = platformModules.concat(baseModules)
+
+export const patch: Function = createPatchFunction({ nodeOps, modules })
+```
+
+modules 是对 attrs, class, dom-props(input value), events, style, transition 的处理（标签属性设置、类名设置、dom 标签节点属性设置，如 input.value 、事件绑定、style 设置、transition 组件的 enter 设置）
+
+19. 转到 `src/core/vdom/patch.js`，`createPatchFunction` 是个闭包，定义了 `cbs` 存储 hooks 函数，vnode 节点渲染为浏览器真实 dom 节点，内部定义了 `['create', 'activate', 'update', 'remove', 'destroy']` 生命周期 hooks，每个 hooks 钩子函数来自于 `modules`
+
+```javascript
+let i, j
+const cbs = {}
+
+const { modules, nodeOps } = backend
+
+for (i = 0; i < hooks.length; ++i) {
+  cbs[hooks[i]] = []
+  for (j = 0; j < modules.length; ++j) {
+    if (isDef(modules[j][hooks[i]])) {
+      cbs[hooks[i]].push(modules[j][hooks[i]])
+    }
+  }
+}
+```
+
+此外定义了一些函数，并最后返回一个 `patch` 函数，前面的 `vm.__patch__` 就是执行这里返回的 `patch` 函数。
+
+20. `patch` 函数中，传入参数 `patch (oldVnode, vnode, hydrating, removeOnly)` 主要分 2 种情况：
+
+1）如果 oldVnode 为非真实 dom 节点，且 oldVnode 和 vnode 为 sameVnode ，则进行 `patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)` 这里就是网上常说的 diff
+
+> vue 首次渲染时 oldVnode 为 el dom 节点（如 <div id="app"></div>）
+
+2）如果 oldVnode 为真实 dom 节点，或者 oldVnode 和 vnode 不是 sameVnode，则直接丢弃 oldVnode，使用新的 vnode 进行渲染（将 dom 节点进行 `removeVnodes` 或 oldVnode 进行 `invokeDestroyHook`）
+
+21. 看下 `sameVnode` 函数：
+
+```javascript
+function sameVnode (a, b) {
+  return (
+    a.key === b.key &&
+    a.asyncFactory === b.asyncFactory && (
+      (
+        a.tag === b.tag &&
+        a.isComment === b.isComment &&
+        isDef(a.data) === isDef(b.data) &&
+        sameInputType(a, b)
+      ) || (
+        isTrue(a.isAsyncPlaceholder) &&
+        isUndef(b.asyncFactory.error)
+      )
+    )
+  )
+}
+```
+
+什么情况下两个 vnode 是 sameVnode：
+
+1）2 个 vnode 的 key 相同（若无指定 key 属性，则 key 属性为 undefined，也视为相同的 key）；
+2）2 个 vnode 的 asyncFactory 相同，即构造方法相同，对于 html 标签则为 undefined，对于 component 组件则为 component 的 Ctor
+3）2 个 vnode 的 tag 相同且 isComment 相同且 data 都有定义，且 input 的 type 相同，或者 oldVnode.isAsyncPlaceholder 为 true，vnode.asyncFactory.error 为 undefined
+
+其实主要就是看 key，以及是不是同一类标签或者组件。
+
+21. 分析 20.2 首次渲染的情况，根据 vnode 创建 dom 节点渲染
+
+```javascript
+createElm(
+  vnode,
+  insertedVnodeQueue,
+  // extremely rare edge case: do not insert if old element is in a
+  // leaving transition. Only happens when combining transition +
+  // keep-alive + HOCs. (#4590)
+  oldElm._leaveCb ? null : parentElm,
+  nodeOps.nextSibling(oldElm)
+)
+```
+
+这里面 vue 的事件绑定策略是：用 addEventListener，直接给目标节点绑定事件，与 preact 一致；
+而 react 是使用事件合成机制，通过事件冒泡（事件委托）来实现，事件绑定在 document 上，通过冒泡方式来触发对应节点的事件。
+
+vue 的事件绑定还不是直接将开发者定义的事件函数直接绑定上去，如 `<div @click="handleClick"></div>` 不会直接将 `handleClick` 绑定到 div 的 click 事件上，而是给 div 的 click 事件绑定一个桥接函数，该函数中存储开发者定义好的 `事件函数数组`，也就是在事件绑定时中间加了一层处理，这样的好处就是在进行 diff 算法时，对于节点事件函数的 diff，可以只通过修改 `事件函数数组` 达到修改，而不用先 removeEventListener 再进行 addEventListener。
+
+> 事件的逻辑在 `src/platforms/web/runtime/modules/events.js` 中
+
+21. 分析 `patchVnode(oldVnode, vnode, insertedVnodeQueue, null, null, removeOnly)` diff 逻辑，
+
+```javascript
+let i
+const data = vnode.data
+if (isDef(data) && isDef(i = data.hook) && isDef(i = i.prepatch)) {
+  i(oldVnode, vnode)
+}
+
+const oldCh = oldVnode.children
+const ch = vnode.children
+if (isDef(data) && isPatchable(vnode)) {
+  for (i = 0; i < cbs.update.length; ++i) cbs.update[i](oldVnode, vnode)
+  if (isDef(i = data.hook) && isDef(i = i.update)) i(oldVnode, vnode)
+}
+```
+
+通过 hooks 对 oldVnode 的 dom 节点进行更新。
+
+如果 oldVnode.children 不存在，而 vnode.children 存在，则对 vnode 执行 `addVnodes(elm, null, ch, 0, ch.length - 1, insertedVnodeQueue)`；
+如果 vnode.children 不存在，而 oldVnode.children 存在，则对 vnode 执行 `removeVnodes(oldCh, 0, oldCh.length - 1)`；
+如果 oldVnode.children 和 oldVnode.children 均存在，则需要对两者进行 diff，执行 `updateChildren(elm, oldCh, ch, insertedVnodeQueue, removeOnly)`：
+
+diff 的同级比较算法：
+定义 oldStartIdx, oldEndIdx, newStartIdx, newEndIdx, oldStartVnode, oldEndVnode, newStartVnode, newEndVnode
+sameVnode 比较时，如果 key 相同（2个 key 为 undefined 也相同）且构造函数相同 asyncFactory (如同个 html 标签或者同个 vue 组件)，则认为相同，可进行复用
+当 oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx 时
+1. 比较 oldStartVnode 和 newStartVnode，如果为同个 vnode，则进行 patchVnode, oldStartIdx + 1, newStartIdx + 1
+2. 比较 oldEndVnode 和 newEndVnode，如果为同个 vnode，则进行 patchVnode, oldEndIdx - 1, newEndIdx - 1
+3. 比较 oldStartVnode 和 newEndVnode，如果为同个 vnode，则进行 patchVnode, oldStartIdx + 1, newEndIdx - 1
+4. 比较 oldEndVnode 和 newStartVnode，如果为同个 vnode，则进行 patchVnode, oldEndIdx - 1, newStartIdx + 1
+5. 找出 newStartVnode 在 oldCh 中的 sameVnode 的下标 idxInOld, newStartIdx + 1, oldCh[idxInOld] 设置为 undefined
+
+当循环结束时：
+1. 若 newCh 剩余节点时 ( oldStartIdx > oldEndIdx), 将剩下的 newCh add 上
+2. 否则，即 oldCh 剩余节点，将剩下的 oldCh remove 掉
+
+
+----
+
+至此，vue 2.0 源码核心内容基本过完。
