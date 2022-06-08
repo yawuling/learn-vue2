@@ -14,6 +14,7 @@ export function handleError (err: Error, vm: any, info: string) {
     if (vm) {
       let cur = vm
       while ((cur = cur.$parent)) {
+        // 最后一个拦截错误的钩子 errorCaptured
         const hooks = cur.$options.errorCaptured
         if (hooks) {
           for (let i = 0; i < hooks.length; i++) {

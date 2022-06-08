@@ -22,8 +22,10 @@ export function initMixin (Vue: Class<Component>) {
     /* istanbul ignore if */
     // 分支流程：在 development 环境下，进行 performance.mark 标记时间，用于渲染性能分析
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
+      // 打点性能分析
       startTag = `vue-perf-start:${vm._uid}`
       endTag = `vue-perf-end:${vm._uid}`
+      console.log(startTag,endTag)
       mark(startTag)
     }
 
@@ -37,23 +39,35 @@ export function initMixin (Vue: Class<Component>) {
       // internal component options needs special treatment.
       initInternalComponent(vm, options)
     } else {
+      // 合并参数，将
+      debugger
+      const globalOptions = resolveConstructorOptions(vm.constructor)
+      console.log('之前的options', options, '----', globalOptions)
       vm.$options = mergeOptions(
-        resolveConstructorOptions(vm.constructor),
+        globalOptions,
         options || {},
         vm
       )
+      console.log('合并后的的options', vm.$options)
     }
     /* istanbul ignore else */
+    // TODO 不知道这个干嘛的
     if (process.env.NODE_ENV !== 'production') {
+      debugger
+      console.log('前', vm)
       initProxy(vm)
+      console.log('后', vm)
     } else {
       vm._renderProxy = vm
     }
+    debugger
     // expose real self
     vm._self = vm
+    // 初始化父子节点的关系
     initLifecycle(vm)
     initEvents(vm)
     initRender(vm)
+
     callHook(vm, 'beforeCreate')
     initInjections(vm) // resolve injections before data/props
     initState(vm)
@@ -92,6 +106,11 @@ export function initInternalComponent (vm: Component, options: InternalComponent
   }
 }
 
+/**
+ * mergeOptions 时 传入的参数
+ * @param {*} Ctor 
+ * @returns 
+ */
 export function resolveConstructorOptions (Ctor: Class<Component>) {
   /**
    * Ctor.options 等于 Vue.options，因为实例的 constructor 指向的是其类 Vue，这时:
@@ -109,6 +128,7 @@ export function resolveConstructorOptions (Ctor: Class<Component>) {
    *   filter: {}
    * }
    */
+  console.log('Ctor', Ctor, Ctor.options)
   let options = Ctor.options
   if (Ctor.super) {
     const superOptions = resolveConstructorOptions(Ctor.super)

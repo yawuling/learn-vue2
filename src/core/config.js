@@ -79,6 +79,7 @@ export default ({
 
   /**
    * Custom user key aliases for v-on
+   * 用户自定义键名
    */
   // $flow-disable-line
   keyCodes: Object.create(null),

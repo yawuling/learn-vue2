@@ -27,6 +27,7 @@ import {
  * value into the final value.
  */
 const strats = config.optionMergeStrategies
+console.log('strats策略列表', config.optionMergeStrategies)
 
 /**
  * Options with restrictions
@@ -390,6 +391,7 @@ export function mergeOptions (
   child: Object,
   vm?: Component
 ): Object {
+  console.log('父，子', parent, child)
   if (process.env.NODE_ENV !== 'production') {
     checkComponents(child)
   }
@@ -397,26 +399,36 @@ export function mergeOptions (
   if (typeof child === 'function') {
     child = child.options
   }
-
+  debugger
+  // 初始化options.props
+  console.log('beforeProps前：', options.props)
   normalizeProps(child, vm)
+  console.log('beforeProps后：', options.props)
+  console.log('normalizeInject前', options.inject)
   normalizeInject(child, vm)
+  console.log('normalizeInject后', options.inject)
+  console.log('normalizeDirectives前', options.directives)
   normalizeDirectives(child)
+  console.log('normalizeDirectives后', options.directives)
 
   // Apply extends and mixins on the child options,
   // but only if it is a raw options object that isn't
   // the result of another mergeOptions call.
   // Only merged options has the _base property.
+  // 非_base属性的函数，如果有extends
   if (!child._base) {
+    // extends 声明扩展，只接受一个，合并extends到当前节点
     if (child.extends) {
       parent = mergeOptions(parent, child.extends, vm)
     }
+    // mixins 混入扩展，可以多个，合并多个参数到当前节点
     if (child.mixins) {
       for (let i = 0, l = child.mixins.length; i < l; i++) {
         parent = mergeOptions(parent, child.mixins[i], vm)
       }
     }
   }
-
+  // 先合并mixins和extends，后合并当前的key
   const options = {}
   let key
   for (key in parent) {
@@ -427,6 +439,10 @@ export function mergeOptions (
       mergeField(key)
     }
   }
+  /**
+   * mergeField：使用了策略模式
+   * @param {*} key 
+   */
   function mergeField (key) {
     const strat = strats[key] || defaultStrat
     options[key] = strat(parent[key], child[key], vm, key)
