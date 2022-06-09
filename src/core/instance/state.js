@@ -347,6 +347,7 @@ export function stateMixin (Vue: Class<Component>) {
       warn(`$props is readonly.`, this)
     }
   }
+  //  将$data/$props 都挂载在Vue原型上。并拦截用户对$data/$props操作进行拦截
   Object.defineProperty(Vue.prototype, '$data', dataDef)
   Object.defineProperty(Vue.prototype, '$props', propsDef)
 

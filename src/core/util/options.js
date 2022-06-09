@@ -401,15 +401,15 @@ export function mergeOptions (
   }
   debugger
   // 初始化options.props
-  console.log('beforeProps前：', options.props)
+  console.log('beforeProps前：', options, options?.props)
   normalizeProps(child, vm)
-  console.log('beforeProps后：', options.props)
-  console.log('normalizeInject前', options.inject)
+  console.log('beforeProps后：', options?.props)
+  console.log('normalizeInject前', options?.inject)
   normalizeInject(child, vm)
-  console.log('normalizeInject后', options.inject)
-  console.log('normalizeDirectives前', options.directives)
+  console.log('normalizeInject后', options?.inject)
+  console.log('normalizeDirectives前', options?.directives)
   normalizeDirectives(child)
-  console.log('normalizeDirectives后', options.directives)
+  console.log('normalizeDirectives后', options?.directives)
 
   // Apply extends and mixins on the child options,
   // but only if it is a raw options object that isn't

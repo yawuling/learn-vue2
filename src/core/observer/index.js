@@ -219,6 +219,7 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
     target[key] = val
     return val
   }
+  // 递归遍历，避免执行劫持时，发生循环引用
   const ob = (target: any).__ob__
   if (target._isVue || (ob && ob.vmCount)) {
     process.env.NODE_ENV !== 'production' && warn(
@@ -235,7 +236,6 @@ export function set (target: Array<any> | Object, key: any, val: any): any {
   ob.dep.notify()
   return val
 }
-
 /**
  * Delete a property and trigger change if necessary.
  */
