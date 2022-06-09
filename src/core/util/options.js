@@ -46,6 +46,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 /**
  * Helper that recursively merges two data objects together.
+ * 合并父子的data属性
  */
 function mergeData (to: Object, from: ?Object): Object {
   if (!from) return to
@@ -104,6 +105,7 @@ export function mergeDataOrFn (
   } else {
     return function mergedInstanceDataFn () {
       // instance merge
+      console.log('实例合并', childVal)
       const instanceData = typeof childVal === 'function'
         ? childVal.call(vm, vm)
         : childVal

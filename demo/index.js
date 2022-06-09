@@ -1,5 +1,6 @@
 import Vue from 'vue'
-
+Vue.config.optionMergeStrategies.name = 'test'
+console.log(Vue.config)
 // new Vue({
 //   el: '#app',
 //   data: {
