@@ -144,6 +144,7 @@ export function defineReactive (
   const dep = new Dep()
 
   const property = Object.getOwnPropertyDescriptor(obj, key)
+  // 属性 configurable 为false时不可以
   if (property && property.configurable === false) {
     return
   }

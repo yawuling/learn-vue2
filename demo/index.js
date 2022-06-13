@@ -7,6 +7,14 @@ import Vue from 'vue'
 //     lastName: 'Joe',
 //     reverseFirstName: 'John'.split('').reverse().join('')
 //   },
+//   components: {
+//     test: {
+//       data: {
+//         firstName: '11'
+//       },
+//       template: '<div  >111</div>'
+//     }
+//   },
 //   computed: {
 //     fullName() {
 //       return this.firstName + this.lastName;

@@ -48,14 +48,15 @@ export function initMixin(Vue: Class<Component>) {
         "----",
         globalOptions
       );
+      // 在合并参数的阶段，根据不同的合并策略来进行合并操作
       vm.$options = mergeOptions(globalOptions, options || {}, vm);
       console.log("合并后的的options", vm.$options.parent);
     }
     /* istanbul ignore else */
-    // TODO 不知道这个干嘛的
     if (process.env.NODE_ENV !== "production") {
       debugger;
       console.log("前", vm);
+      // 对系统关键字添加拦截，避免发生键名冲突
       initProxy(vm);
       console.log("后", vm);
     } else {
@@ -64,8 +65,9 @@ export function initMixin(Vue: Class<Component>) {
     debugger;
     // expose real self
     vm._self = vm;
-    // 初始化父子节点的关系
+    // 初始化父子节点的关系，以及与关系相关的属性
     initLifecycle(vm);
+    // 
     initEvents(vm);
     initRender(vm);
 
