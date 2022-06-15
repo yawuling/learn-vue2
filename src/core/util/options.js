@@ -300,6 +300,7 @@ function normalizeProps(options: Object, vm: ?Component) {
   if (!props) return;
   const res = {};
   let i, val, name;
+  // 1. props: [name, type]
   if (Array.isArray(props)) {
     i = props.length;
     while (i--) {
@@ -312,8 +313,10 @@ function normalizeProps(options: Object, vm: ?Component) {
       }
     }
   } else if (isPlainObject(props)) {
+    // 2.props: { name: String, type: String  } || props: { name: { type: String, default: () => { return '' } }  }
     for (const key in props) {
       val = props[key];
+      // 将key值变成驼峰形式
       name = camelize(key);
       res[name] = isPlainObject(val) ? val : { type: val };
     }
@@ -324,6 +327,10 @@ function normalizeProps(options: Object, vm: ?Component) {
       vm
     );
   }
+  /**
+   * 将所有形式的props都处理成
+   * props: { name: { type: String, default: () => { return '' } }  }
+   */
   options.props = res;
 }
 let obj = {};
@@ -403,15 +410,11 @@ export function mergeOptions(
   }
   debugger;
   // 初始化options.props
-  console.log("beforeProps前：", options, options?.props);
+  // 规范化props、Inject、direct
+  // 定义props的时候可以[name, type]
   normalizeProps(child, vm);
-  console.log("beforeProps后：", options?.props);
-  console.log("normalizeInject前", options?.inject);
   normalizeInject(child, vm);
-  console.log("normalizeInject后", options?.inject);
-  console.log("normalizeDirectives前", options?.directives);
   normalizeDirectives(child);
-  console.log("normalizeDirectives后", options?.directives);
 
   // Apply extends and mixins on the child options,
   // but only if it is a raw options object that isn't
