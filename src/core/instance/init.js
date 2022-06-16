@@ -20,7 +20,7 @@ export function initMixin(Vue: Class<Component>) {
 
     let startTag, endTag;
     /* istanbul ignore if */
-    // 分支流程：在 development 环境下，进行 performance.mark 标记时间，用于渲染性能分析
+    // 分支流程：在 development 环境下，进行 performance.mark 标记时间，用于渲染性能分析 
     if (process.env.NODE_ENV !== "production" && config.performance && mark) {
       // 打点性能分析
       startTag = `vue-perf-start:${vm._uid}`;
@@ -134,9 +134,10 @@ export function resolveConstructorOptions(Ctor: Class<Component>) {
    *   filter: {}
    * }
    */
-  // Ctor 实际上是Vue实例
+  // Ctor 实际上是Vue实例的构造函数
   console.log("Ctor: ", Ctor, Ctor.options);
   let options = Ctor.options;
+  // Ctor.super 是在Vue.extend中出现过
   if (Ctor.super) {
     const superOptions = resolveConstructorOptions(Ctor.super);
     const cachedSuperOptions = Ctor.superOptions;

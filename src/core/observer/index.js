@@ -163,6 +163,8 @@ export function defineReactive (
     configurable: true,
     get: function reactiveGetter () {
       const value = getter ? getter.call(obj) : val
+      // watcher: Dep.target中存入的是当前的视图
+      console.log('当前watcher', Dep.target)
       if (Dep.target) {
         dep.depend()
         if (childOb) {
