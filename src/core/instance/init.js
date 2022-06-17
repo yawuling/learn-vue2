@@ -67,7 +67,10 @@ export function initMixin(Vue: Class<Component>) {
     vm._self = vm;
     // 初始化父子节点的关系，以及与关系相关的属性
     initLifecycle(vm);
-    // 
+    /**
+     * 1. 在vm上添加_events
+     * 2. 添加
+     */
     initEvents(vm);
     initRender(vm);
 
