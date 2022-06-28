@@ -1,0 +1,18 @@
+{
+  "name": "vue2",
+  "version": "1.0.0",
+  "description": "分享代码",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "rollup -cw"
+  },
+  "author": "houxinchao",
+  "license": "ISC",
+  "dependencies": {
+    "@babel/core": "^7.18.5",
+    "@babel/preset-env": "^7.18.2",
+    "rollup": "^2.75.6",
+    "rollup-plugin-babel": "^4.4.0"
+  }
+}

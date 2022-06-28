@@ -26,11 +26,13 @@
    * @param {*} val 键值
    */
   function defineReactive(obj, key, value) {
+    // 对所有对象都进行属性劫持
+    observe(value);
     Object.defineProperty(obj, key, {
       configurable: true,
       enumerable: true,
       get() {
-        console.log('get', value);
+        console.log("get", value);
         return value;
       },
       set(newValue) {
@@ -38,13 +40,16 @@
         if (value === newValue) {
           return;
         }
-        console.log('set', newValue);
+        console.log("set", newValue);
         value = newValue;
       },
     });
   }
 
   function observe(data) {
+    if (typeof data !== "object" || data === null) {
+      return;
+    }
     // 添加属性标记，如果一个实例被创建过或者被标记过就不标记直接返回
     return new Observer(data);
   }

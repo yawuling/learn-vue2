@@ -32,6 +32,11 @@
         // },
         data() {
           return {
+            msg: {
+              data: {
+                a: 'test'
+              }
+            },
             firstName: "John",
             lastName: "Joe",
             reverseFirstName: "John".split("").reverse().join(""),
@@ -71,8 +76,8 @@
       // 虽然可以这么使用，但实际上vue里是通过 vm.xxx 来实现获取数据的，
       // 因此需要我们把vm.xxx  映射到 vm._data.xxx上来实现数据的的代理
       // vm._data.firstName = 'test'
-      console.log(vm.firstName)
-      vm.firstName = 'test'
+      console.log(vm.msg.data.a)
+      // vm.firstName = 'test'
     </script>
   </body>
 </html>
