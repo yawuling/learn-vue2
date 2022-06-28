@@ -76,6 +76,7 @@ export function initMixin(Vue: Class<Component>) {
 
     callHook(vm, "beforeCreate");
     initInjections(vm); // resolve injections before data/props
+    // 初始化数据，添加数据劫持
     initState(vm);
     initProvide(vm); // resolve provide after data/props
     callHook(vm, "created");

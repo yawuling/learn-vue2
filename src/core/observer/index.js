@@ -60,6 +60,7 @@ export class Observer {
    * Walk through all properties and convert them into
    * getter/setters. This method should only be called when
    * value type is Object.
+   * 遍历对象，针对对象的每一个值进行劫持
    */
   walk (obj: Object) {
     const keys = Object.keys(obj)
@@ -70,6 +71,7 @@ export class Observer {
 
   /**
    * Observe a list of Array items.
+   * 针对每一个数组的值也做一次拦截，如果是对象那么进行拦截
    */
   observeArray (items: Array<any>) {
     for (let i = 0, l = items.length; i < l; i++) {
@@ -133,6 +135,15 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
 
 /**
  * Define a reactive property on an Object.
+ */
+/**
+ * 
+ * @param {Object} obj 对象
+ * @param {string} key key值
+ * @param {any} val 对应内容
+ * @param {Function} customSetter 自定义setter
+ * @param {boolean} shallow 是否是浅拷贝
+ * @returns 
  */
 export function defineReactive (
   obj: Object,

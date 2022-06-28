@@ -19,11 +19,6 @@ function Vue (options) {
 
 // 先看下Vue引入时都做了什么
 console.log('初始化Mixin')
-/**
- * 调用了_init:
- * 1、参数合并，把全局参数和自定义参数进行合并
- * 2、
- */
 debugger
 initMixin(Vue)
 // 初始化

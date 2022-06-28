@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
   <body>
@@ -18,6 +18,61 @@
         <div>watch: {{ reverseFirstName }}</div>
       </div>
     </div>
-    <scirpt src="../dist/vue.js"></scirpt>
+    <!-- <scirpt src="../dist/vue.js"></scirpt> -->
+    <script src="./customVue/dist/vue.js"></script>
+    <script>
+      // 响应式的数据变化
+      // 核心：数据变化 -> 可以监听到数据的更改 -> 使用该数据的视图发生变化
+      const vm = new Vue({
+        el: "#app",
+        // data: {
+        //   firstName: 'John',
+        //   lastName: 'Joe',
+        //   reverseFirstName: 'John'.split('').reverse().join('')
+        // },
+        data() {
+          return {
+            firstName: "John",
+            lastName: "Joe",
+            reverseFirstName: "John".split("").reverse().join(""),
+          };
+        },
+        components: {
+          test: {
+            data: {
+              firstName: "11",
+            },
+            template: "<div  >111</div>",
+          },
+        },
+        computed: {
+          fullName() {
+            return this.firstName + this.lastName;
+          },
+        },
+        watch: {
+          firstName(val) {
+            this.reverseFirstName = val.split("").reverse().join("");
+          },
+        },
+        created() {
+          console.log(1);
+        },
+        mounted() {
+          console.log(this.$refs.firstDom);
+        },
+        methods: {
+          reset() {
+            this.firstName = "John";
+          },
+        },
+      });
+      console.log(vm)
+      // 虽然可以这么使用，但实际上vue里是通过 vm.xxx 来实现获取数据的，
+      // 因此需要我们把vm.xxx  映射到 vm._data.xxx上来实现数据的的代理
+      // vm._data.firstName = 'test'
+      console.log(vm.firstName)
+      vm.firstName = 'test'
+    </script>
   </body>
 </html>

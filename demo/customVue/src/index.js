@@ -1,5 +1,8 @@
-const a = 1;
-console.log(a);
+import initMixin from "./init";
+function Vue(options) {
+  this._init(options);
+}
 
-export { a };
-// export default 1;
+initMixin(Vue)
+
+export default Vue
