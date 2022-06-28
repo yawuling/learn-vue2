@@ -20,7 +20,7 @@ export function initMixin(Vue: Class<Component>) {
 
     let startTag, endTag;
     /* istanbul ignore if */
-    // 分支流程：在 development 环境下，进行 performance.mark 标记时间，用于渲染性能分析
+    // 分支流程：在 development 环境下，进行 performance.mark 标记时间，用于渲染性能分析 
     if (process.env.NODE_ENV !== "production" && config.performance && mark) {
       // 打点性能分析
       startTag = `vue-perf-start:${vm._uid}`;
@@ -48,14 +48,15 @@ export function initMixin(Vue: Class<Component>) {
         "----",
         globalOptions
       );
+      // 在合并参数的阶段，根据不同的合并策略来进行合并操作
       vm.$options = mergeOptions(globalOptions, options || {}, vm);
       console.log("合并后的的options", vm.$options.parent);
     }
     /* istanbul ignore else */
-    // TODO 不知道这个干嘛的
     if (process.env.NODE_ENV !== "production") {
       debugger;
       console.log("前", vm);
+      // 对系统关键字添加拦截，避免发生键名冲突
       initProxy(vm);
       console.log("后", vm);
     } else {
@@ -64,13 +65,18 @@ export function initMixin(Vue: Class<Component>) {
     debugger;
     // expose real self
     vm._self = vm;
-    // 初始化父子节点的关系
+    // 初始化父子节点的关系，以及与关系相关的属性
     initLifecycle(vm);
+    /**
+     * 1. 在vm上添加_events
+     * 2. 添加
+     */
     initEvents(vm);
     initRender(vm);
 
     callHook(vm, "beforeCreate");
     initInjections(vm); // resolve injections before data/props
+    // 初始化数据，添加数据劫持
     initState(vm);
     initProvide(vm); // resolve provide after data/props
     callHook(vm, "created");
@@ -132,9 +138,10 @@ export function resolveConstructorOptions(Ctor: Class<Component>) {
    *   filter: {}
    * }
    */
-  // Ctor 实际上是Vue实例
+  // Ctor 实际上是Vue实例的构造函数
   console.log("Ctor: ", Ctor, Ctor.options);
   let options = Ctor.options;
+  // Ctor.super 是在Vue.extend中出现过
   if (Ctor.super) {
     const superOptions = resolveConstructorOptions(Ctor.super);
     const cachedSuperOptions = Ctor.superOptions;

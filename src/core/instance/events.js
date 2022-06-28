@@ -11,10 +11,17 @@ import { updateListeners } from '../vdom/helpers/index'
 
 export function initEvents (vm: Component) {
   vm._events = Object.create(null)
+  // _hasHookEvent：表示是否有 @hook:绑定的事件
   vm._hasHookEvent = false
   // init parent attached events
+  // 父元素的_parentListeners的v-on的事件
   const listeners = vm.$options._parentListeners
+  console.log('listeners', listeners)
+  // 有父元素的事件
   if (listeners) {
+    // 为当前的vm对象添加父元素的listener
+    // 先把父元素的listeners赋值到当前vm的listeners上
+    // https://zhuanlan.zhihu.com/p/142395540
     updateComponentListeners(vm, listeners)
   }
 }
@@ -39,6 +46,12 @@ function createOnceHandler (event, fn) {
   }
 }
 
+/**
+ * 更新组件的上的listner
+ * @param {*} vm 
+ * @param {*} listeners 
+ * @param {*} oldListeners 
+ */
 export function updateComponentListeners (
   vm: Component,
   listeners: Object,
