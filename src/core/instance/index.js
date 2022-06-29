@@ -12,14 +12,11 @@ function Vue (options) {
   ) {
     warn('Vue is a constructor and should be called with the `new` keyword')
   }
-  debugger
+  
   // 主流程1: 进行初始化，将 options 传入 _init 函数，该函数为 initMixin 挂载到 Vue.prototype 上的
   this._init(options)
 }
 
-// 先看下Vue引入时都做了什么
-console.log('初始化Mixin')
-debugger
 initMixin(Vue)
 // 初始化
 stateMixin(Vue)

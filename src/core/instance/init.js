@@ -48,15 +48,11 @@ export function initMixin(Vue: Class<Component>) {
     }
     /* istanbul ignore else */
     if (process.env.NODE_ENV !== "production") {
-      debugger;
-      console.log("前", vm);
       // 对系统关键字添加拦截，避免发生键名冲突
       initProxy(vm);
-      console.log("后", vm);
     } else {
       vm._renderProxy = vm;
     }
-    debugger;
     // expose real self
     vm._self = vm;
     // 初始化父子节点的关系，以及与关系相关的属性

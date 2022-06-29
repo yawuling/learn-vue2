@@ -136,6 +136,8 @@ export function observe (value: any, asRootData: ?boolean): Observer | void {
 /**
  * Define a reactive property on an Object.
  */
+// watcher 视图 -》 
+// dep 依赖
 /**
  * 
  * @param {Object} obj 对象

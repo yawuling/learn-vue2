@@ -6,7 +6,7 @@ export default {
   output: {
     file: './dist/vue.js',
     name: 'Vue',
-    format: 'umd', // esm cmd amd
+    format: 'umd', // cmd amd
     sourcemap: true
   },
   plugin: [

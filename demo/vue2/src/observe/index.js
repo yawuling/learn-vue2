@@ -3,41 +3,39 @@ class Observer {
     this.walk(data);
   }
   walk(data) {
-    // 获取
-    // 设置
     Object.keys(data).forEach((key) => defineReactive(data, key, data[key]));
   }
 }
-
 /**
  *
- * @param {*} obj 当前被劫持的对象
- * @param {*} key 遍历到的key
- * @param {*} value 当前key对应的value
+ * @param {*} target 目标对象
+ * @param {*} key 需要拦截的键值
+ * @param {*} value 当前获取的键值对应的数据
  */
-function defineReactive(obj, key, value) {
-  // debugger
-  /**
-   * 1. 只能劫持当前存在的对象
-   * 2. $set $delete 去实现的 移除和添加响应
-   */
+function defineReactive(target, key, value) {
+  // 对象 key {  }
+  // 拦截取值的过程
+  // 拦截赋值的过程
   observe(value);
-  Object.defineProperty(obj, key, {
+  // 只能拦截当前target 存在的 key
+  Object.defineProperty(target, key, {
     configurable: true,
     enumerable: true,
     get() {
-      console.log("获取了当前的value", value);
+      console.log("get", value);
       return value;
     },
     set(newValue) {
       if (newValue === value) {
         return;
       }
-      console.log("修改了了当前的value", newValue);
+      console.log("set", newValue);
+      observe(newValue);
       value = newValue;
     },
   });
 }
+
 export function observe(data) {
   if (typeof data !== "object" || data === null) {
     return;

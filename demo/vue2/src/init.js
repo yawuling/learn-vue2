@@ -1,12 +1,13 @@
-import { initState } from "./state";
+import { initState } from "./state"
 
-export default function initMixin(Vue) {
+export function initMixin(Vue) {
   Vue.prototype._init = function (options) {
+    console.log(options)
     const vm = this
-    // mergeOptions，父组件和子组件之间公用的变量，Vue.extend 
+    // mergeOptions $ _
     vm.$options = options
-
-    // 初始化data 初始化props 初始化methods
+    // data  props method
     initState(vm)
-  };
+    vm._self = vm
+  }
 }

@@ -17,6 +17,7 @@ import {
   isBuiltInTag,
   isPlainObject,
 } from "shared/util";
+import Vue from "../instance";
 
 /**
  * Option overwriting strategies are functions that handle

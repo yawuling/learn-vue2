@@ -8,95 +8,28 @@
   </head>
   <body>
     <div id="app">
-      <div>
-        <div ref="firstDom">data: {{ firstName }}</div>
-        <div>
-          <input v-model="firstName" />
-          <button @click="reset">reset</button>
-        </div>
-        <div>computed: {{ fullName }}</div>
-        <div>watch: {{ reverseFirstName }}</div>
-      </div>
+      <div>{{msg}}</div>
     </div>
     <!-- <scirpt src="../dist/vue.js"></scirpt> -->
     <script src="./vue2/dist/vue.js"></script>
     <script>
-      console.log(Vue)
-      const vm = new Vue({
-        el: '#app',
-        data: {
-          msg: 1,
-          obj: {
-            msg1: 2,
-            msg2: {
-              msg3: 3
-            }
-          }
-        }
-      })
-      // vm.xxx vm._data
-      vm.obj.msg1 = 2
-      console.log(vm)
-      // 循环引用
-    </script>
-    <!-- <script>
-      // 响应式的数据变化
-      // 核心：数据变化 -> 可以监听到数据的更改 -> 使用该数据的视图发生变化
       const vm = new Vue({
         el: "#app",
-        // data: {
-        //   firstName: 'John',
-        //   lastName: 'Joe',
-        //   reverseFirstName: 'John'.split('').reverse().join('')
-        // },
-        data() {
-          return {
-            msg: {
-              data: {
-                a: 'test'
-              }
-            },
-            firstName: "John",
-            lastName: "Joe",
-            reverseFirstName: "John".split("").reverse().join(""),
-          };
+        data: {
+          msg: 1,
+          msg1: {
+            obj: 1
+          }
         },
-        components: {
-          test: {
-            data: {
-              firstName: "11",
-            },
-            template: "<div  >111</div>",
-          },
-        },
-        computed: {
-          fullName() {
-            return this.firstName + this.lastName;
-          },
-        },
-        watch: {
-          firstName(val) {
-            this.reverseFirstName = val.split("").reverse().join("");
-          },
-        },
-        created() {
-          console.log(1);
-        },
-        mounted() {
-          console.log(this.$refs.firstDom);
-        },
-        methods: {
-          reset() {
-            this.firstName = "John";
-          },
-        },
+        // data() {
+        //   return {}
+        // }
       });
+      vm._data.msg = {
+        ib: '1'
+      }
+      // vm.xxxx vm._data.xxxx
       console.log(vm)
-      // 虽然可以这么使用，但实际上vue里是通过 vm.xxx 来实现获取数据的，
-      // 因此需要我们把vm.xxx  映射到 vm._data.xxx上来实现数据的的代理
-      // vm._data.firstName = 'test'
-      console.log(vm.msg.data.a)
-      // vm.firstName = 'test'
-    </script> -->
+    </script>
   </body>
 </html>
