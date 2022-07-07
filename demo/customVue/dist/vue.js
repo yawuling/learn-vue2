@@ -4,18 +4,82 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Vue = factory());
 })(this, (function () { 'use strict';
 
+  const def = function (obj, key, value) {
+    Object.defineProperty(obj, key, {
+      enumerable: false,
+      value,
+    });
+  };
+
+  const oldArrayProto = Array.prototype;
+
+  // newArrayProto.__proto__ = Array.prototype
+  let newArrayProto = Object.create(oldArrayProto);
+
+  // 需要重写的是可能会改变当前数组本身的操作
+  const methods = [
+    "push",
+    "pop",
+    "shift",
+    "unshift",
+    "splice",
+    "sort",
+    "reverse",
+  ];
+
+  methods.forEach((method) => {
+    newArrayProto[method] = function (...args) {
+      console.log("执行了自定义方法", args);
+      let result = oldArrayProto[method].call(this, ...args);
+      const ob = this.__ob__;
+      // push unshift splice
+      let inserted;
+      switch (method) {
+        case "push":
+        case "unshift":
+          inserted = args;
+          break;
+        case "splice":
+          // splice(0, 2, {name:2}, {name:3})
+          inserted = args.slice(2);
+          break;
+      }
+      if (inserted) {
+        ob.observeArray(inserted);
+      }
+      console.log("新增数据", inserted);
+      return result;
+    };
+  });
+
   class Observer {
     constructor(data) {
       /**
        * object.defineProperty 只能劫持当前存在的属性，对新增的和删除的监听不到
        * 因此在Vue2中需要写一些单独的api 比如 $set $delete
        */
-      this.walk(data);
+      // 将__ob__变成不可枚举，这样循环的时候就无法枚举当前属性了
+      def(data, '__ob__', this);
+      // Object.defineProperty(data, "__ob__", {
+      //   enumerable: false,
+      //   value: this,
+      // });
+      // data.__ob__ = this;
+      if (Array.isArray(data)) {
+        data.__proto__ = newArrayProto;
+        // data.push() -> 这里的data就是push自定义中的执行上下文（this）
+        this.observeArray(data);
+      } else {
+        this.walk(data);
+      }
     }
     walk(obj) {
       // 循环对象对属性进行依次劫持
       // 此处会重新定义属性，相当于把data中的数据重新复制一遍
       Object.keys(obj).forEach((key) => defineReactive(obj, key, obj[key]));
+    }
+    observeArray(arr) {
+      arr.forEach((data) => observe(data));
     }
   }
 
@@ -49,6 +113,9 @@
   function observe(data) {
     if (typeof data !== "object" || data === null) {
       return;
+    }
+    if (data.__ob__ instanceof Observer) {
+      return data.__ob__;
     }
     // 添加属性标记，如果一个实例被创建过或者被标记过就不标记直接返回
     return new Observer(data);
@@ -96,7 +163,6 @@
 
   function initMixin(Vue) {
     Vue.prototype._init = function (options) {
-      console.log(options);
       const vm = this;
       // 在init里面我们可以做一些初始化的操作
       // 在Vue中一般使用 $xxx 来表示一些Vue的私有属性

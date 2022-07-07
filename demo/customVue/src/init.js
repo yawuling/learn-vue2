@@ -2,7 +2,6 @@ import { initState } from "./state";
 
 function initMixin(Vue) {
   Vue.prototype._init = function (options) {
-    console.log(options);
     const vm = this;
     // 在init里面我们可以做一些初始化的操作
     // 在Vue中一般使用 $xxx 来表示一些Vue的私有属性
