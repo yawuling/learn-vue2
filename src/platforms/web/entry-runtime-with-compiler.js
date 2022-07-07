@@ -33,8 +33,12 @@ Vue.prototype.$mount = function (
   const options = this.$options
   // resolve template/el and convert to render function
   if (!options.render) {
+    // 有render用render
     let template = options.template
+    // 没有render用template
     if (template) {
+      // 查看了string字符串的情况
+      // template: 'aaaa'
       if (typeof template === 'string') {
         if (template.charAt(0) === '#') {
           template = idToTemplate(template)
@@ -55,6 +59,7 @@ Vue.prototype.$mount = function (
         return this
       }
     } else if (el) {
+      // 没有template用el
       template = getOuterHTML(el)
     }
     if (template) {

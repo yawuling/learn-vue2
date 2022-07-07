@@ -1,12 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-</head>
-<body>
-  <script src="./dist/vue.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <div id="app">
+      <div>{{msg}}</div>
+    </div>
+    <!-- <scirpt src="../dist/vue.js"></scirpt> -->
+    <script src="./dist/vue.js"></script>
+    <script>
+      const vm = new Vue({
+        el: "#app",
+        data: {
+          msg: 1,
+          arr: [{name: 1}],
+        }
+      });
+      // 1. 模板解析，把当前的模板解析成js，每次更新都是重新替换，（在1.0的时候没有采用虚拟DOm 因此性能极差）
+      // 2. 根据解析的语法生成虚拟DOM，通过比较虚拟DOM之间的差异去做更新页面
+      // 上次说错了Vue虚拟DOM其实是抄angular，react是最后添加的
+
+      // 明确了上面的问题之后就可以知道，其实我们需要做的就是做html->js之间 的一个转换。
+      // 通常做语法转换，是用的就是AST语法树,AST语法树其实就是一种抽象描述语言的树形结构，树上的每一个节点都是对当前属性的形容。我们在日常生活中用到的ES6到ES5转换就是用的AST、还有做代码压缩等等。
+      // html -> ast -> js语法 -> 虚拟DOM
+      // render函数 （ast -> 虚拟DOM）
+      console.log(vm);
+    </script>
+  </body>
 </html>

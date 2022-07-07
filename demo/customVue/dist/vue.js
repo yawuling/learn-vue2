@@ -4,6 +4,16 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Vue = factory());
 })(this, (function () { 'use strict';
 
+  /**
+   * 主要做了两个操作
+   * 1. 将template 生成ast语法树
+   * 2. 生成render函数
+   * @param {*} template 
+   */
+  function compileToFunctions(template) {
+    console.log(template);
+  }
+
   const def = function (obj, key, value) {
     Object.defineProperty(obj, key, {
       enumerable: false,
@@ -172,6 +182,31 @@
       vm._self = vm;
       initState(vm);
       // 初始化状态，比如 data/computed/props等等
+      if (vm.$options.el) {
+        vm.$mount(vm.$options.el);
+      }
+    };
+    Vue.prototype.$mount = function (el) {
+      const vm = this;
+      el = document.querySelector(el);
+      const opts = vm.$options;
+      // 先查找render
+      if (!opts.render) {
+        let template = opts.template;
+        // 如果当前没有render没那就解析template
+        if (!template && el) {
+          // 有template解析template，没有就解析使用el获取dom元素
+          // outerHTML获取序列化后的html片段
+          template = el.outerHTML;
+        }
+        if (template) {
+          // 如果有模板需要对模板进行编译，即 html -> ast语法树
+          // 生成render函数，并挂载到opts上
+          const render = compileToFunctions(template);
+          // jsx -> 渲染函数 h('div', { ... 描述 })
+          opts.render = render;
+        }
+      }
     };
   }
 
