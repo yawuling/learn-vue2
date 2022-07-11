@@ -21,13 +21,18 @@ import {
   getAndRemoveAttrByRegex
 } from '../helpers'
 
+// 事件绑定
 export const onRE = /^@|^v-on:/
+// 标签
 export const dirRE = process.env.VBIND_PROP_SHORTHAND
   ? /^v-|^@|^:|^\.|^#/
   : /^v-|^@|^:|^#/
+  // 语法 (item, index) in list 或 (item, index) of list
 export const forAliasRE = /([\s\S]*?)\s+(?:in|of)\s+([\s\S]*)/
 export const forIteratorRE = /,([^,\}\]]*)(?:,([^,\}\]]*))?$/
+// (开头 或)结束
 const stripParensRE = /^\(|\)$/g
+// 语法 [ ... ]
 const dynamicArgRE = /^\[.*\]$/
 
 const argRE = /:(.*)$/
@@ -205,6 +210,7 @@ export function parse (
     }
   }
 
+  // 格式化HTML
   parseHTML(template, {
     warn,
     expectHTML: options.expectHTML,

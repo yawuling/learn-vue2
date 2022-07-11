@@ -4,6 +4,8 @@
  * 2. 生成render函数
  * @param {*} template 
  */
+
 export function compileToFunctions(template) {
   console.log(template)
+  // TODO 待补充
 }

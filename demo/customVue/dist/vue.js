@@ -10,8 +10,10 @@
    * 2. 生成render函数
    * @param {*} template 
    */
+
   function compileToFunctions(template) {
     console.log(template);
+    // TODO 待补充
   }
 
   const def = function (obj, key, value) {
