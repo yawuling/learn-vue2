@@ -4,16 +4,42 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Vue = factory());
 })(this, (function () { 'use strict';
 
+  // 属性正则：匹配属性 a = b  a="b" a='b'
+  const ncname = `[a-zA-Z_][\\-\\.0-9_a-zA-Z]*`;
+  const qnameCapture = `((?:${ncname}\\:)?${ncname})`;
+  // 匹配开始的标签<div
+  const startTagOpen = new RegExp(`^<${qnameCapture}`); // 判断是否为开始标签的开头 <
+
   /**
    * 主要做了两个操作
    * 1. 将template 生成ast语法树
    * 2. 生成render函数
-   * @param {*} template 
+   * @param {*} template
    */
-
   function compileToFunctions(template) {
     console.log(template);
-    // TODO 待补充
+    // 解析template
+    parseHTML(template);
+  }
+  /**
+   * 拆解template 生成ast语法树
+   * @param {*} template 模板
+   * @returns ast语法树
+   */
+  function parseHTML(html) {
+    // 处理一个解析一个，直至最后全部处理完成
+    let last;
+    last = html;
+    let replaceStr = last.match(startTagOpen);
+    // last = last.replace(last.match(startTagOpen)[0], "");
+    // last = last.replace(last.match(attribute)[0], "");
+    // last = last.replace(last.match(startTagClose)[0], "");
+    console.log(replaceStr);
+    // console.log(last.match(attribute))
+    // while (html) {
+    //   last = html;
+    // }
+    return {};
   }
 
   const def = function (obj, key, value) {
@@ -206,6 +232,7 @@
           // 生成render函数，并挂载到opts上
           const render = compileToFunctions(template);
           // jsx -> 渲染函数 h('div', { ... 描述 })
+          // 这一步骤只有在打包时才会有，runtime Only 如果是runtime+compiler则是把编译过程放在运行时做
           opts.render = render;
         }
       }

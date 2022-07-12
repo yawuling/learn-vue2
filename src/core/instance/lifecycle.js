@@ -151,6 +151,7 @@ export function mountComponent(
   hydrating?: boolean
 ): Component {
   vm.$el = el;
+  // 有render直接用render，没有则生成一个
   if (!vm.$options.render) {
     vm.$options.render = createEmptyVNode;
     if (process.env.NODE_ENV !== "production") {

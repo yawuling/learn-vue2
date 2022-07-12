@@ -34,6 +34,7 @@ function initMixin(Vue) {
         // 生成render函数，并挂载到opts上
         const render = compileToFunctions(template)
         // jsx -> 渲染函数 h('div', { ... 描述 })
+        // 这一步骤只有在打包时才会有，runtime Only 如果是runtime+compiler则是把编译过程放在运行时做
         opts.render = render
       }
     }

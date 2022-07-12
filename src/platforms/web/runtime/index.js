@@ -43,6 +43,9 @@ Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
+  /**
+   * 表示当前环境有window，即浏览器环境
+   */
   el = el && inBrowser ? query(el) : undefined
   return mountComponent(this, el, hydrating)
 }
