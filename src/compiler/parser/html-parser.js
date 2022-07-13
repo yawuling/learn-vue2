@@ -65,15 +65,18 @@ export function parseHTML(html, options) {
   const expectHTML = options.expectHTML;
   const isUnaryTag = options.isUnaryTag || no;
   const canBeLeftOpenTag = options.canBeLeftOpenTag || no;
+  // 索引
   let index = 0;
   let last, lastTag;
   while (html) {
     last = html;
     // Make sure we're not in a plaintext content element like script/style
     if (!lastTag || !isPlainTextElement(lastTag)) {
+      // 遍历当前是否是标签的起始位置 '<div'
       let textEnd = html.indexOf("<");
+      // 从头开始处理一个完成标签
       if (textEnd === 0) {
-        // Comment:
+        // Comment: 有注释的情况可忽略
         if (comment.test(html)) {
           const commentEnd = html.indexOf("-->");
 
@@ -89,7 +92,7 @@ export function parseHTML(html, options) {
             continue;
           }
         }
-
+        // IE注释可忽略
         // http://en.wikipedia.org/wiki/Conditional_comment#Downlevel-revealed_conditional_comment
         if (conditionalComment.test(html)) {
           const conditionalEnd = html.indexOf("]>");
@@ -100,14 +103,21 @@ export function parseHTML(html, options) {
           }
         }
 
-        // Doctype:
+        // Doctype: 可忽略
         const doctypeMatch = html.match(doctype);
         if (doctypeMatch) {
           advance(doctypeMatch[0].length);
           continue;
         }
 
-        // End tag:
+        // End tag: 判断是否是关不=
+        /**
+         * 有两种情况
+         * 1. 表示当前处于标签起始位置并通过起始位置处理当前标签
+         * 2. 是关闭标签</div>
+         * eg: <div id="app"></div>
+         * textEnd: 0; 通过处理当前 <div id="app"> ‘<’ 和 ‘>’中间的部分
+         */
         const endTagMatch = html.match(endTag);
         if (endTagMatch) {
           const curIndex = index;
@@ -119,7 +129,18 @@ export function parseHTML(html, options) {
         // Start tag:
         const startTagMatch = parseStartTag();
         if (startTagMatch) {
-          handleStartTag(startTagMatch); // 处理 html 节点，将 attrs 解析为 ast，处理为对象：{ tag: tagName, lowerCasedTag: tagName.toLowerCase(), attrs: Array({ name, value, start, end }), start, end }，这时候 attrs 还只是原始字符串的值
+          /**
+           * handleStartTag 处理 html 节点，将 attrs 解析为 ast，处理为对象：
+           * {
+           *    tag: tagName,
+           *    lowerCasedTag: tagName.toLowerCase(),
+           *    attrs: Array({ name, value, start, end }),
+           *    start,
+           *    end
+           * }，
+           * 这时候 attrs 还只是原始字符串的值
+           */
+          handleStartTag(startTagMatch);
           if (shouldIgnoreFirstNewline(startTagMatch.tagName, html)) {
             advance(1);
           }
@@ -219,6 +240,7 @@ export function parseHTML(html, options) {
       };
       advance(start[0].length);
       let end, attr;
+      // 如果当前不是开始标签的关闭状态，那么就还处在当前的标签当中，即改标签的属性
       while (
         !(end = html.match(startTagClose)) &&
         (attr = html.match(dynamicArgAttribute) || html.match(attribute))
@@ -236,7 +258,6 @@ export function parseHTML(html, options) {
       }
     }
   }
-
   function handleStartTag(match) {
     const tagName = match.tagName;
     const unarySlash = match.unarySlash;
