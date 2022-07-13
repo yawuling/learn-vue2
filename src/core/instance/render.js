@@ -87,6 +87,9 @@ export function setCurrentRenderingInstance(vm: Component) {
 
 export function renderMixin(Vue: Class<Component>) {
   // install runtime convenience helpers
+  /**
+   * 挂载渲染函数 _c _v _s ....
+   */
   installRenderHelpers(Vue.prototype);
 
   Vue.prototype.$nextTick = function (fn: Function) {
@@ -115,7 +118,9 @@ export function renderMixin(Vue: Class<Component>) {
       // separately from one another. Nested component's render fns are called
       // when parent component is patched.
       currentRenderingInstance = vm;
+      // 通过执行render函数获取虚拟dom节点
       vnode = render.call(vm._renderProxy, vm.$createElement);
+      console.log(render, "v--", vnode);
     } catch (e) {
       handleError(e, vm, `render`);
       // return error render result,

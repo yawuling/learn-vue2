@@ -1,3 +1,4 @@
+import { generate } from "./codeGen/index";
 import { parseHTML } from "./parse";
 
 /**
@@ -10,5 +11,8 @@ export function compileToFunctions(template) {
   // console.log(template);
   // 解析template
   const ast = parseHTML(template);
-  console.log('获取结果', ast)
+  // _c('div',{id: 'app'}, _c('span', null, _v(_s(msg) + 'text')))
+  const { render } = generate(ast);
+  // 生成对应的处理函数
+  return render;
 }

@@ -10,24 +10,9 @@
     <div id="app">
       <div>{{msg}}</div>
     </div>
+    <script src="./index.js"></script>
     <!-- <scirpt src="../dist/vue.js"></scirpt> -->
-    <script src="./customVue/dist/vue.js"></script>
+    <!-- <script src="./customVue/dist/vue.js"></script> -->
     <!-- <script src="./vue2/dist/vue.js"></script> -->
-    <script>
-      const vm = new Vue({
-        el: "#app",
-        data: {
-          msg: 1,
-          arr: [{name: 1}],
-        },
-      });
-      // vm._data.msg = {
-      //   ib: "1",
-      // };
-      
-      // vm.xxxx vm._data.xxxx
-      vm.arr.splice(1, 1, {name: 2})
-      console.log(vm);
-    </script>
   </body>
 </html>

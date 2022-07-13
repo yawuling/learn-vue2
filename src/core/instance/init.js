@@ -40,7 +40,6 @@ export function initMixin(Vue: Class<Component>) {
       initInternalComponent(vm, options);
     } else {
       // 合并参数，将
-      debugger;
       const globalOptions = resolveConstructorOptions(vm.constructor);
       // 在合并参数的阶段，根据不同的合并策略来进行合并操作
       vm.$options = mergeOptions(globalOptions, options || {}, vm);

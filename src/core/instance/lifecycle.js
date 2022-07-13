@@ -31,7 +31,6 @@ export function setActiveInstance(vm: Component) {
 
 export function initLifecycle(vm: Component) {
   console.log("初始化生命周期");
-  debugger;
   const options = vm.$options;
 
   // locate first non-abstract parent，获取 options.parent，找到 parent.$options.abstract 为 false 的 parent，将当前的 vm 塞入 parent.$children
@@ -179,6 +178,7 @@ export function mountComponent(
 
   let updateComponent;
   /* istanbul ignore if */
+  // 性能测试
   if (process.env.NODE_ENV !== "production" && config.performance && mark) {
     updateComponent = () => {
       const name = vm._name;

@@ -4,6 +4,7 @@ import { parse } from "./parser/index";
 import { optimize } from "./optimizer";
 import { generate } from "./codegen/index";
 import { createCompilerCreator } from "./create-compiler";
+import { SlowBuffer } from "buffer";
 
 // `createCompilerCreator` allows creating compilers that use alternative
 // parser/optimizer/codegen, e.g the SSR optimizing compiler.
@@ -27,6 +28,7 @@ export const createCompiler = createCompilerCreator(function baseCompile(
     optimize(ast, options);
   }
   const code = generate(ast, options);
+  console.log('render', code.render)
   return {
     ast,
     render: code.render,

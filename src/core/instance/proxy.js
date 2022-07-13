@@ -36,7 +36,6 @@ if (process.env.NODE_ENV !== 'production') {
 
   const hasProxy =
     typeof Proxy !== 'undefined' && isNative(Proxy)
-    debugger
   if (hasProxy) {
     // 支持proxy代理替换defineProperty
     const isBuiltInModifier = makeMap('stop,prevent,self,ctrl,shift,alt,meta,exact')
@@ -85,14 +84,12 @@ if (process.env.NODE_ENV !== 'production') {
     
     if (hasProxy) {
       console.log('进入', hasProxy)
-      debugger
       // determine which proxy handler to use
       // 确定handle使用搞那个handler
       const options = vm.$options
       const handlers = options.render && options.render._withStripped
         ? getHandler
         : hasHandler
-        debugger
       vm._renderProxy = new Proxy(vm, handlers)
     } else {
       vm._renderProxy = vm

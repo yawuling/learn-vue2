@@ -413,7 +413,6 @@ export function mergeOptions(
   if (typeof child === "function") {
     child = child.options;
   }
-  debugger;
   // 初始化options.props
   // 规范化props、Inject、direct
   // 定义props的时候可以[name, type]

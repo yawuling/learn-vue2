@@ -47,6 +47,7 @@ export function generate (
   const state = new CodegenState(options)
   // fix #11483, Root level <script> tags should not be rendered.
   const code = ast ? (ast.tag === 'script' ? 'null' : genElement(ast, state)) : '_c("div")'
+  console.log('code:', code)
   return {
     render: `with(this){return ${code}}`,
     staticRenderFns: state.staticRenderFns
@@ -534,6 +535,7 @@ function genNode (node: ASTNode, state: CodegenState): string {
 }
 
 export function genText (text: ASTText | ASTExpression): string {
+  console.log('------', transformSpecialNewlines(JSON.stringify(text.text)))
   return `_v(${text.type === 2
     ? text.expression // no need for () because already wrapped in _s()
     : transformSpecialNewlines(JSON.stringify(text.text))

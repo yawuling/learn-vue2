@@ -4,6 +4,80 @@
   (global = typeof globalThis !== 'undefined' ? globalThis : global || self, global.Vue = factory());
 })(this, (function () { 'use strict';
 
+  const defaultTagRE = /\{\{((?:.|\r?\n)+?)\}\}/g;
+
+  function genProps(props) {
+    let code = "";
+    props.forEach((attr) => {
+      code += `,${attr.name}:${JSON.stringify(attr.value)}`;
+    });
+    return `{${code.slice(1)}}`;
+  }
+  function genChildren(children) {
+    let code = "";
+    children.forEach((child) => {
+      code += "," + genElement(child);
+    });
+    return code.slice(1);
+  }
+
+  function genText({ text }) {
+    let code;
+    if (defaultTagRE.test(text)) {
+      // _s(name) + text
+      let tokens = [];
+      let match;
+      let index;
+      let lastIndex = (defaultTagRE.lastIndex = 0);
+      while ((match = defaultTagRE.exec(text))) {
+        // 文本节点处于两次index之间
+        index = match.index;
+        if (index > lastIndex) {
+          tokens.push(JSON.stringify(text.slice(lastIndex, index)));
+        }
+        lastIndex = index + match[0].length;
+        tokens.push(`_s(${match[1]})`);
+      }
+      if (lastIndex < text.length) {
+        tokens.push(JSON.stringify(text.slice(lastIndex)));
+      }
+      code = `_v(${tokens.join("+")})`;
+    } else {
+      code = `_v(${JSON.stringify(text)})`;
+    }
+    return code;
+    // return `_v(${ defaultTagRE.test(node.text) ?  : JSON.stringify(node.text)})`
+  }
+
+  /**
+   * 生成render函数：_c('div',{id: 'app'}, _c('span', null,  _v(_s(msg))))
+   * @param {*} ast
+   * @returns
+   */
+  function genElement(ast) {
+    if (ast.type === 2) {
+      // 文本节点返回值
+      return genText(ast);
+    }
+    // let code = `_c('div',{id: 'app'}, _c('span', null, _v(_s(msg))))`;
+    let code = `
+    _c(
+       '${ast.tag}', 
+        ${ast.attrs?.length ? genProps(ast.attrs) : null}, 
+        ${ast.children?.length ? genChildren(ast.children) : null}
+      )`;
+    return code;
+  }
+
+  function generate (ast) {
+    let code = genElement(ast);
+    code = `with(this){return ${code}}`;
+    let render = new Function(code);
+    return {
+      render
+    }
+  }
+
   // 属性正则：匹配属性 a = b  a="b" a='b'
   const attribute =
     /^\s*([^\s"'<>\/=]+)(?:\s*(=)\s*(?:"([^"]*)"+|'([^']*)'+|([^\s"'=<>`]+)))?/;
@@ -160,7 +234,10 @@
     // console.log(template);
     // 解析template
     const ast = parseHTML(template);
-    console.log('获取结果', ast);
+    // _c('div',{id: 'app'}, _c('span', null, _v(_s(msg) + 'text')))
+    const { render } = generate(ast);
+    // 生成对应的处理函数
+    return render;
   }
 
   const def = function (obj, key, value) {
